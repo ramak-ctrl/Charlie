@@ -32,7 +32,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const serviceClient = await createServiceClient();
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const results: { email: string; success: boolean; error?: string }[] = [];
+  const results: { email: string; success: boolean; error?: string; interviewLink?: string; emailSent?: boolean }[] = [];
 
   for (const c of parsed.data.candidates) {
     try {
