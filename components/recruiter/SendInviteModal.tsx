@@ -142,7 +142,7 @@ export default function SendInviteModal({ jobId, jobTitle }: Props) {
               </div>
               {results.some(r => r.success && !r.emailSent) && (
                 <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-md">
-                  No email sent — RESEND_API_KEY not configured. Share the interview links above manually.
+                  Email not sent — SMTP not configured. Share the interview links above manually.
                 </p>
               )}
             </div>

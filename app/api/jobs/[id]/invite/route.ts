@@ -61,12 +61,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       const interviewLink = `${appUrl}/interview/${token.token}`;
 
       let emailSent = false;
-      if (process.env.RESEND_API_KEY) {
+      if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
         await sendInterviewInvite({
+          fromEmail: user.email!,
           to: c.email,
           candidateName: c.name,
           jobTitle: job.title,
-          companyName: "Our Company",
           interviewLink,
           expiresAt: token.expires_at,
         });
