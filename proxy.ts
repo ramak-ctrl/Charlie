@@ -28,18 +28,26 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   const path = request.nextUrl.pathname;
 
-  if (path.startsWith("/interview/")) return supabaseResponse;
-  if (path.startsWith("/api/")) return supabaseResponse;
-
-  if (!user && !path.startsWith("/auth/")) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/auth/login";
-    return NextResponse.redirect(url);
+  // Always allow public routes through
+  if (
+    path === "/" ||
+    path.startsWith("/interview/") ||
+    path.startsWith("/api/") ||
+    path.startsWith("/auth/")
+  ) {
+    // Redirect logged-in users away from auth pages
+    if (user && path.startsWith("/auth/")) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/dashboard";
+      return NextResponse.redirect(url);
+    }
+    return supabaseResponse;
   }
 
-  if (user && path.startsWith("/auth/")) {
+  // Protect recruiter routes
+  if (!user) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.pathname = "/auth/login";
     return NextResponse.redirect(url);
   }
 
