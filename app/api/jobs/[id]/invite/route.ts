@@ -62,8 +62,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
       let emailSent = false;
       if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+        const fromEmail = process.env.SMTP_FROM ?? user.email ?? "rama.k@mechispike.com";
         await sendInterviewInvite({
-          fromEmail: user.email!,
+          fromEmail,
           to: c.email,
           candidateName: c.name,
           jobTitle: job.title,
