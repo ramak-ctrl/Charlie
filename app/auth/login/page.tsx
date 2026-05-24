@@ -2,11 +2,10 @@
 
 import { useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import CharlieLogo from "@/components/CharlieLogo";
 
 export const dynamic = "force-dynamic";
 
@@ -24,118 +23,94 @@ export default function LoginPage() {
     setError(null);
     setSuccessMsg(null);
 
-    // Initialize client lazily (only in browser, never during SSR)
     const supabase = createClient();
 
     if (mode === "login") {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        setError(error.message);
-        setLoading(false);
-      } else {
-        window.location.href = "/dashboard";
-      }
+      if (error) { setError(error.message); setLoading(false); }
+      else { window.location.href = "/dashboard"; }
     } else {
       const { error } = await supabase.auth.signUp({
-        email,
-        password,
+        email, password,
         options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
       });
-      if (error) {
-        setError(error.message);
-      } else {
-        setSuccessMsg("Check your email to confirm your account.");
-      }
+      if (error) { setError(error.message); }
+      else { setSuccessMsg("Check your email to confirm your account."); }
       setLoading(false);
     }
   }, [email, password, mode]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-600 mb-4">
-            <span className="text-white font-bold text-xl">C</span>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">Charlie</h1>
-          <p className="text-gray-500 mt-1">AI-Powered Recruitment Screening</p>
+    <div style={{ minHeight: "100vh", background: "#09090b", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, fontFamily: "'Inter', system-ui, sans-serif" }}>
+
+      <div style={{ width: "100%", maxWidth: 400 }}>
+        {/* Logo */}
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 36 }}>
+          <CharlieLogo size="lg" href="/" />
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{mode === "login" ? "Sign in" : "Create account"}</CardTitle>
-            <CardDescription>
-              {mode === "login" ? "Access your recruiter dashboard" : "Get started with Charlie"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@company.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete={mode === "login" ? "current-password" : "new-password"}
-                  minLength={8}
-                />
-              </div>
+        {/* Card */}
+        <div style={{ background: "#111115", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "36px 32px" }}>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: "#fafaf9", letterSpacing: "-0.5px", marginBottom: 4 }}>
+            {mode === "login" ? "Welcome back" : "Create your account"}
+          </h2>
+          <p style={{ fontSize: 13, color: "#71717a", marginBottom: 28 }}>
+            {mode === "login" ? "Sign in to your recruiter dashboard" : "Start screening candidates with AI"}
+          </p>
 
-              {error && (
-                <p className="text-sm text-rose-600 bg-rose-50 px-3 py-2 rounded-md">{error}</p>
-              )}
-              {successMsg && (
-                <p className="text-sm text-green-700 bg-green-50 px-3 py-2 rounded-md">{successMsg}</p>
-              )}
-
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {mode === "login" ? "Sign in" : "Create account"}
-              </Button>
-            </form>
-
-            <div className="mt-4 text-center text-sm text-gray-500">
-              {mode === "login" ? (
-                <>
-                  Don&apos;t have an account?{" "}
-                  <button
-                    type="button"
-                    onClick={() => { setMode("signup"); setError(null); }}
-                    className="text-indigo-600 hover:underline font-medium"
-                  >
-                    Sign up
-                  </button>
-                </>
-              ) : (
-                <>
-                  Already have an account?{" "}
-                  <button
-                    type="button"
-                    onClick={() => { setMode("login"); setError(null); }}
-                    className="text-indigo-600 hover:underline font-medium"
-                  >
-                    Sign in
-                  </button>
-                </>
-              )}
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            <div>
+              <Label htmlFor="email" style={{ fontSize: 13, fontWeight: 500, color: "#a1a1aa", display: "block", marginBottom: 6 }}>Email</Label>
+              <Input
+                id="email" type="email" placeholder="you@company.com"
+                value={email} onChange={(e) => setEmail(e.target.value)}
+                required autoComplete="email"
+                style={{ background: "#18181d", border: "1px solid rgba(255,255,255,0.1)", color: "#fafaf9", borderRadius: 8, fontSize: 14 }}
+              />
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <Label htmlFor="password" style={{ fontSize: 13, fontWeight: 500, color: "#a1a1aa", display: "block", marginBottom: 6 }}>Password</Label>
+              <Input
+                id="password" type="password" placeholder="••••••••"
+                value={password} onChange={(e) => setPassword(e.target.value)}
+                required autoComplete={mode === "login" ? "current-password" : "new-password"}
+                minLength={8}
+                style={{ background: "#18181d", border: "1px solid rgba(255,255,255,0.1)", color: "#fafaf9", borderRadius: 8, fontSize: 14 }}
+              />
+            </div>
+
+            {error && (
+              <div style={{ fontSize: 13, color: "#f87171", background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.2)", borderRadius: 8, padding: "10px 14px" }}>
+                {error}
+              </div>
+            )}
+            {successMsg && (
+              <div style={{ fontSize: 13, color: "#34d399", background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.2)", borderRadius: 8, padding: "10px 14px" }}>
+                {successMsg}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              style={{ background: "#7c3aed", color: "#fff", border: "1px solid rgba(124,58,237,0.8)", borderRadius: 9, padding: "12px 0", fontWeight: 700, fontSize: 15, cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 4px 20px rgba(124,58,237,0.3)", marginTop: 4 }}
+            >
+              {loading && <Loader2 style={{ width: 16, height: 16, animation: "spin 1s linear infinite" }} />}
+              {mode === "login" ? "Sign in" : "Create account"}
+            </button>
+          </form>
+
+          <p style={{ textAlign: "center", fontSize: 13, color: "#52525b", marginTop: 20 }}>
+            {mode === "login" ? "Don't have an account? " : "Already have an account? "}
+            <button
+              type="button"
+              onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(null); }}
+              style={{ background: "none", border: "none", color: "#a78bfa", fontWeight: 600, cursor: "pointer", fontSize: 13 }}
+            >
+              {mode === "login" ? "Sign up" : "Sign in"}
+            </button>
+          </p>
+        </div>
       </div>
     </div>
   );

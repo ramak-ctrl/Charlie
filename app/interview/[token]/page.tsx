@@ -1,6 +1,7 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import InterviewRoom from "@/components/candidate/InterviewRoom";
+import CharlieLogo from "@/components/CharlieLogo";
 
 export default async function InterviewPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
@@ -39,5 +40,12 @@ export default async function InterviewPage({ params }: { params: Promise<{ toke
     expired,
   };
 
-  return <InterviewRoom pageData={pageData} />;
+  return (
+    <div style={{ minHeight: "100vh", background: "#09090b", fontFamily: "'Inter', system-ui, sans-serif" }}>
+      <header style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", padding: "16px 32px" }}>
+        <CharlieLogo size="sm" href="/" />
+      </header>
+      <InterviewRoom pageData={pageData} />
+    </div>
+  );
 }

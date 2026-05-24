@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatDate, formatDuration, recommendationColor, recommendationLabel } from "@/lib/utils";
-import { Users, Copy, CheckCircle2, Clock, FileText } from "lucide-react";
+import { Users, Copy, CheckCircle2, Clock, FileText, Trash2 } from "lucide-react";
 import EvaluationReport from "./EvaluationReport";
 import type { Recommendation } from "@/lib/types";
 
@@ -31,12 +31,21 @@ interface Props {
 export default function CandidateTable({ candidates, jobId, appUrl }: Props) {
   const [selectedInterview, setSelectedInterview] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const router = useRouter();
 
   function copyLink(token: string) {
     navigator.clipboard.writeText(`${appUrl}/interview/${token}`);
     setCopied(token);
     setTimeout(() => setCopied(null), 2000);
+  }
+
+  async function handleDelete(candidateId: string, name: string) {
+    if (!confirm(`Remove ${name}? This will also delete their interview and report.`)) return;
+    setDeleting(candidateId);
+    await fetch(`/api/candidates/${candidateId}`, { method: "DELETE" });
+    router.refresh();
+    setDeleting(null);
   }
 
   if (candidates.length === 0) {
@@ -123,6 +132,16 @@ export default function CandidateTable({ candidates, jobId, appUrl }: Props) {
                           Report
                         </button>
                       )}
+
+                      <button
+                        onClick={() => handleDelete(c.id, c.name)}
+                        disabled={deleting === c.id}
+                        aria-label={`Delete ${c.name}`}
+                        className="p-1.5 rounded-md text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
+                        title="Delete candidate"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
                     </div>
                   </td>
                 </tr>

@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { LayoutDashboard, Briefcase, Settings, LogOut } from "lucide-react";
+import CharlieLogo from "@/components/CharlieLogo";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -25,16 +26,8 @@ export default function Sidebar({ userEmail }: { userEmail: string }) {
   return (
     <aside className="w-60 sidebar-bg border-r border-border/40 flex flex-col h-full shrink-0">
       {/* Logo */}
-      <div className="px-5 py-6 border-b border-border/30">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0 shadow-lg shadow-primary/20">
-            <svg viewBox="0 0 24 24" className="w-4 h-4 text-white fill-none stroke-current stroke-2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 12h2l2-5 3 10 2-7 2 4 2-2h3" />
-            </svg>
-          </div>
-          <span className="font-semibold text-foreground tracking-tight text-base">Charlie</span>
-        </div>
-        <p className="text-[10px] text-muted-foreground mt-2 leading-none pl-0.5">AI Recruitment Screening</p>
+      <div className="px-5 py-5 border-b border-border/30">
+        <CharlieLogo size="sm" />
       </div>
 
       {/* Nav */}
