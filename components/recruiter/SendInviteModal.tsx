@@ -110,41 +110,45 @@ export default function SendInviteModal({ jobId, jobTitle }: Props) {
                 <CheckCircle2 className="h-5 w-5" />
                 <span className="font-medium">{successCount} of {results.length} candidates added successfully</span>
               </div>
-              <div className="space-y-2 max-h-64 overflow-y-auto">
+              <div className="space-y-3 max-h-72 overflow-y-auto">
                 {results.map((r) => (
-                  <div key={r.email} className={`text-sm px-3 py-2.5 rounded-md ${r.success ? "bg-gray-50" : "bg-rose-50"}`}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className={r.success ? "text-gray-700 font-medium" : "text-rose-700"}>{r.email}</span>
-                      <span className={`text-xs font-medium ${r.success ? (r.emailSent ? "text-green-600" : "text-amber-600") : "text-rose-600"}`}>
-                        {r.success ? (r.emailSent ? "Email sent" : "Link ready") : r.error ?? "Failed"}
+                  <div key={r.email} className={`rounded-lg border px-4 py-3 ${r.success ? "bg-muted/40 border-border/60" : "bg-rose-500/10 border-rose-500/20"}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className={`text-sm font-medium ${r.success ? "text-foreground" : "text-rose-400"}`}>{r.email}</span>
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${
+                        !r.success ? "text-rose-400 bg-rose-500/10 border-rose-500/20" :
+                        r.emailSent ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" :
+                        "text-amber-400 bg-amber-500/10 border-amber-500/20"
+                      }`}>
+                        {r.success ? (r.emailSent ? "✓ Email sent" : "⚠ Email failed") : r.error ?? "Failed"}
                       </span>
                     </div>
                     {r.success && r.interviewLink && (
-                      <div className="flex items-center gap-2 mt-1">
-                        <input
-                          readOnly
-                          value={r.interviewLink}
-                          className="flex-1 text-xs bg-white border border-gray-200 rounded px-2 py-1 text-gray-500 font-mono truncate"
-                          onClick={(e) => (e.target as HTMLInputElement).select()}
-                          aria-label="Interview link"
-                        />
-                        <button
-                          onClick={() => navigator.clipboard.writeText(r.interviewLink!)}
-                          className="text-xs px-2 py-1 bg-indigo-50 text-indigo-600 rounded hover:bg-indigo-100 shrink-0"
-                          aria-label="Copy link"
-                        >
-                          Copy
-                        </button>
+                      <div className="mt-1">
+                        {!r.emailSent && (
+                          <p className="text-xs text-amber-400 mb-1.5">Email could not be sent — share this link manually:</p>
+                        )}
+                        <div className="flex items-center gap-2">
+                          <input
+                            readOnly
+                            value={r.interviewLink}
+                            className="flex-1 text-xs bg-background border border-border rounded px-2 py-1.5 text-muted-foreground font-mono truncate"
+                            onClick={(e) => (e.target as HTMLInputElement).select()}
+                            aria-label="Interview link"
+                          />
+                          <button
+                            onClick={() => navigator.clipboard.writeText(r.interviewLink!)}
+                            className="text-xs px-3 py-1.5 bg-primary/10 text-primary border border-primary/20 rounded hover:bg-primary/20 shrink-0 font-medium"
+                            aria-label="Copy link"
+                          >
+                            Copy
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
                 ))}
               </div>
-              {results.some(r => r.success && !r.emailSent) && (
-                <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-md">
-                  Email not sent — SMTP not configured. Share the interview links above manually.
-                </p>
-              )}
             </div>
           ) : (
             <div className="space-y-3" onPaste={handlePaste}>
