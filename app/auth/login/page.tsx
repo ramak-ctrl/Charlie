@@ -36,13 +36,9 @@ export default function LoginPage() {
       if (error) { setError(error.message); setLoading(false); }
       else { window.location.href = "/dashboard"; }
     } else {
-      const { error } = await supabase.auth.signUp({
-        email, password,
-        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
-      });
-      if (error) { setError(error.message); }
-      else { setSuccessMsg("Check your email to confirm your account."); }
-      setLoading(false);
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) { setError(error.message); setLoading(false); }
+      else { window.location.href = "/dashboard"; }
     }
   }, [email, password, mode]);
 
