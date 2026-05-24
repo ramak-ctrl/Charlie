@@ -26,6 +26,6 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ int
 
   return NextResponse.json({
     interview,
-    evaluation: (interview.evaluations as unknown[])?.[0] ?? null,
+    evaluation: interview.evaluations ?? null,
   });
 }
