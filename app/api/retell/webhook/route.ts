@@ -16,6 +16,8 @@ export async function POST(request: NextRequest) {
   const { event: eventType, data: callData } = event;
   const callId = callData?.call_id;
 
+  console.log(`[webhook] event=${eventType} call_id=${callId}`);
+
   if (!callId || (eventType !== "call_ended" && eventType !== "call_analyzed")) {
     return NextResponse.json({ received: true });
   }
