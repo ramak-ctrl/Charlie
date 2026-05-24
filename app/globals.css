@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222 22% 5%;
+    --foreground: 210 20% 93%;
+    --card: 222 20% 8%;
+    --card-foreground: 210 20% 93%;
+    --popover: 222 20% 8%;
+    --popover-foreground: 210 20% 93%;
+    --primary: 243 75% 63%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 222 18% 12%;
+    --secondary-foreground: 210 15% 75%;
+    --muted: 222 18% 11%;
+    --muted-foreground: 220 12% 48%;
+    --accent: 222 18% 14%;
+    --accent-foreground: 210 20% 93%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 222 18% 13%;
+    --input: 222 18% 12%;
+    --ring: 243 75% 63%;
+    --radius: 0.625rem;
+    --sidebar: 222 25% 3.5%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/30;
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    @apply bg-card border border-border/60 rounded-xl;
+  }
+  .sidebar-bg {
+    background: hsl(var(--sidebar));
+  }
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+.animate-pulse-ring {
+  animation: pulse-ring 1.8s ease-out infinite;
+}
