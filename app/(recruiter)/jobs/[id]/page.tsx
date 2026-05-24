@@ -21,7 +21,7 @@ type CandidateRow = {
     status: string;
     duration_secs: number | null;
     completed_at: string | null;
-    evaluations: { overall_score: number; recommendation: string }[];
+    evaluations: { overall_score: number; recommendation: string } | null;
   }[];
 };
 

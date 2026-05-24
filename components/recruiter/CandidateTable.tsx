@@ -18,7 +18,7 @@ interface CandidateRow {
     status: string;
     duration_secs: number | null;
     completed_at: string | null;
-    evaluations?: { overall_score: number; recommendation: string }[];
+    evaluations?: { overall_score: number; recommendation: string } | null;
   }[];
 }
 
@@ -67,7 +67,7 @@ export default function CandidateTable({ candidates, jobId, appUrl }: Props) {
             {candidates.map((c) => {
               const token = c.interview_tokens?.[0];
               const interview = c.interviews?.[0];
-              const evaluation = interview?.evaluations?.[0];
+              const evaluation = interview?.evaluations ?? null;
               const isExpired = token ? new Date(token.expires_at) < new Date() : false;
 
               return (
