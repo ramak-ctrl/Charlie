@@ -30,8 +30,8 @@ export default async function JobsPage() {
     <div className="p-8 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Jobs</h1>
-          <p className="text-gray-500 mt-1">{allJobs.length} job{allJobs.length !== 1 ? "s" : ""} total</p>
+          <h1 className="text-2xl font-bold text-foreground">Jobs</h1>
+          <p className="text-muted-foreground mt-1">{allJobs.length} job{allJobs.length !== 1 ? "s" : ""} total</p>
         </div>
         <Link href="/jobs/new">
           <Button aria-label="Create new job">
