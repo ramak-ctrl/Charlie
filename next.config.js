@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  serverExternalPackages: ["retell-sdk"],
+  serverExternalPackages: ["retell-sdk", "nodemailer"],
   async headers() {
     return [
       {

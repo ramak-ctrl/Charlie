@@ -63,15 +63,21 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       let emailSent = false;
       if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
         const fromEmail = process.env.SMTP_FROM ?? user.email ?? "rama.k@mechispike.com";
-        await sendInterviewInvite({
-          fromEmail,
-          to: c.email,
-          candidateName: c.name,
-          jobTitle: job.title,
-          interviewLink,
-          expiresAt: token.expires_at,
-        });
-        emailSent = true;
+        try {
+          await sendInterviewInvite({
+            fromEmail,
+            to: c.email,
+            candidateName: c.name,
+            jobTitle: job.title,
+            interviewLink,
+            expiresAt: token.expires_at,
+          });
+          emailSent = true;
+        } catch (emailErr) {
+          console.error("[invite] email failed:", emailErr);
+        }
+      } else {
+        console.log("[invite] SMTP not configured — skipping email for", c.email);
       }
 
       results.push({ email: c.email, success: true, interviewLink, emailSent });
