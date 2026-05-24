@@ -1,21 +1,7 @@
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import CharlieLogo from "@/components/CharlieLogo";
 
-export const dynamic = "force-dynamic";
-
-export default async function LandingPage() {
-  try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) redirect("/dashboard");
-  } catch (e) {
-    const err = e as { digest?: string };
-    if (err?.digest?.startsWith("NEXT_REDIRECT")) throw e;
-    // Supabase auth error — show landing page anyway
-  }
-
+export default function LandingPage() {
   return (
     <div style={{ background: "#09090b", minHeight: "100vh", fontFamily: "'Inter', system-ui, sans-serif", color: "#fafaf9" }}>
 
