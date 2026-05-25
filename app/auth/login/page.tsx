@@ -48,7 +48,7 @@ export default function LoginPage() {
       <div style={{ width: "100%", maxWidth: 400 }}>
         {/* Logo */}
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 36 }}>
-          <CharlieLogo size="lg" href="/" />
+          <CharlieLogo size="xl" href="/" />
         </div>
 
         {/* Card */}

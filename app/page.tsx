@@ -7,7 +7,7 @@ export default function LandingPage() {
 
       {/* NAV */}
       <nav style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: 1200, margin: "0 auto", padding: "20px 40px" }}>
-        <CharlieLogo size="md" />
+        <CharlieLogo size="xl" />
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <Link href="#features" style={{ padding: "8px 18px", borderRadius: 8, fontSize: 14, fontWeight: 500, color: "#a1a1aa", border: "1px solid rgba(255,255,255,0.07)", transition: "color .2s" }}>Features</Link>
           <Link href="#how" style={{ padding: "8px 18px", borderRadius: 8, fontSize: 14, fontWeight: 500, color: "#a1a1aa", border: "1px solid rgba(255,255,255,0.07)" }}>How it works</Link>
@@ -131,7 +131,7 @@ export default function LandingPage() {
 
       {/* FOOTER */}
       <footer style={{ borderTop: "1px solid rgba(255,255,255,0.07)", maxWidth: 1200, margin: "0 auto", padding: "24px 40px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <CharlieLogo size="sm" />
+        <CharlieLogo size="md" />
         <span style={{ fontSize: 12, color: "#3f3f46" }}>© 2026 Charlie · AI-powered recruitment screening</span>
       </footer>
     </div>
