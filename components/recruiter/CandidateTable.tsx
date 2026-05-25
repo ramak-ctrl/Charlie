@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatDate, formatDuration, recommendationColor, recommendationLabel } from "@/lib/utils";
-import { Users, Copy, CheckCircle2, Clock, FileText, Trash2 } from "lucide-react";
+import { Users, Copy, CheckCircle2, Clock, FileText, Trash2, RefreshCw } from "lucide-react";
 import EvaluationReport from "./EvaluationReport";
 import type { Recommendation } from "@/lib/types";
 
@@ -32,12 +32,20 @@ export default function CandidateTable({ candidates, jobId, appUrl }: Props) {
   const [selectedInterview, setSelectedInterview] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState<string | null>(null);
   const router = useRouter();
 
   function copyLink(token: string) {
     navigator.clipboard.writeText(`${appUrl}/interview/${token}`);
     setCopied(token);
     setTimeout(() => setCopied(null), 2000);
+  }
+
+  async function handleSync(interviewId: string) {
+    setSyncing(interviewId);
+    await fetch(`/api/interviews/sync/${interviewId}`, { method: "POST" });
+    router.refresh();
+    setSyncing(null);
   }
 
   async function handleDelete(candidateId: string, name: string) {
@@ -109,6 +117,18 @@ export default function CandidateTable({ candidates, jobId, appUrl }: Props) {
                   </td>
                   <td className="py-3.5 px-4 text-right">
                     <div className="flex items-center gap-1.5 justify-end">
+                      {interview && interview.status === "in_progress" && (
+                        <button
+                          onClick={() => handleSync(interview.id)}
+                          disabled={syncing === interview.id}
+                          aria-label={`Sync status for ${c.name}`}
+                          className="p-1.5 rounded-md text-muted-foreground hover:text-blue-400 hover:bg-blue-500/10 transition-colors disabled:opacity-40"
+                          title="Sync interview status"
+                        >
+                          <RefreshCw className={`h-3.5 w-3.5 ${syncing === interview.id ? "animate-spin" : ""}`} />
+                        </button>
+                      )}
+
                       {token && !isExpired && !token.used_at && (
                         <button
                           onClick={() => copyLink(token.token)}

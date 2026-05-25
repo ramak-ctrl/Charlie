@@ -1,6 +1,8 @@
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import Retell from "retell-sdk";
+import { analyzeInterview } from "@/lib/anthropic";
+import type { ScreeningQuestion } from "@/lib/types";
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ interviewId: string }> }) {
   const { interviewId } = await params;
@@ -56,16 +58,34 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ in
     return NextResponse.json({ synced: true, analyzed: false, reason: "No transcript yet — call may still be processing" });
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  // Check if evaluation already exists
+  const { data: existing } = await serviceClient
+    .from("evaluations")
+    .select("id")
+    .eq("interview_id", interviewId)
+    .single();
+
+  if (existing) {
+    return NextResponse.json({ synced: true, analyzed: true, reason: "Already analyzed" });
+  }
+
   try {
-    const analyzeRes = await fetch(`${appUrl}/api/analyze`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ interview_id: interviewId }),
+    const { data: fullInterview } = await serviceClient
+      .from("interviews")
+      .select("*, jobs(title, key_skills, screening_questions(*))")
+      .eq("id", interviewId)
+      .single();
+
+    const jobData = (fullInterview!.jobs as { title: string; key_skills: string[]; screening_questions: ScreeningQuestion[] });
+    const result = await analyzeInterview({
+      transcript: transcript as { role: "agent" | "user"; content: string }[],
+      job: { title: jobData.title, key_skills: jobData.key_skills },
+      screeningQuestions: jobData.screening_questions ?? [],
     });
-    const analyzeData = await analyzeRes.json();
-    return NextResponse.json({ synced: true, analyzed: analyzeRes.ok, result: analyzeData });
-  } catch {
+    await serviceClient.from("evaluations").insert({ interview_id: interviewId, ...result });
+    return NextResponse.json({ synced: true, analyzed: true });
+  } catch (err) {
+    console.error("[sync] analysis failed:", err);
     return NextResponse.json({ synced: true, analyzed: false, reason: "Analysis failed" });
   }
 }
