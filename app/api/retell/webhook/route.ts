@@ -1,6 +1,8 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import Retell from "retell-sdk";
+import { analyzeInterview } from "@/lib/anthropic";
+import type { ScreeningQuestion } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -72,12 +74,35 @@ export async function POST(request: NextRequest) {
     .eq("id", interview.id);
 
   if (transcript.length > 2) {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-    fetch(`${appUrl}/api/analyze`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ interview_id: interview.id }),
-    }).catch(() => {});
+    // Run analysis directly — avoids depending on NEXT_PUBLIC_APP_URL being correct
+    const { data: fullInterview } = await supabase
+      .from("interviews")
+      .select("*, jobs(title, key_skills, screening_questions(*))")
+      .eq("id", interview.id)
+      .single();
+
+    if (fullInterview) {
+      const { data: existing } = await supabase
+        .from("evaluations")
+        .select("id")
+        .eq("interview_id", interview.id)
+        .single();
+
+      if (!existing) {
+        try {
+          const jobData = fullInterview.jobs as { title: string; key_skills: string[]; screening_questions: ScreeningQuestion[] };
+          const result = await analyzeInterview({
+            transcript: transcript as { role: "agent" | "user"; content: string }[],
+            job: { title: jobData.title, key_skills: jobData.key_skills },
+            screeningQuestions: jobData.screening_questions ?? [],
+          });
+          await supabase.from("evaluations").insert({ interview_id: interview.id, ...result });
+          console.log(`[webhook] analysis complete for interview=${interview.id}`);
+        } catch (err) {
+          console.error("[webhook] analysis failed:", err);
+        }
+      }
+    }
   }
 
   return NextResponse.json({ received: true });
