@@ -36,7 +36,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ in
     return NextResponse.json({ error: "Failed to fetch call from Retell" }, { status: 502 });
   }
 
-  const transcript = (callData.transcript as { role: string; content: string }[]) ?? [];
+  const transcriptObject = (callData.transcript_object as { role: string; content: string }[]) ?? [];
   const durationMs = callData.duration_ms as number | undefined;
   const recordingUrl = (callData.recording_url as string | undefined) ?? null;
 
@@ -44,7 +44,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ in
     .from("interviews")
     .update({
       status: "completed",
-      transcript,
+      transcript: transcriptObject,
       recording_url: recordingUrl,
       duration_secs: durationMs ? Math.floor(durationMs / 1000) : null,
       completed_at: new Date().toISOString(),
@@ -54,7 +54,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ in
   const candidateId = (interview.candidates as { id: string }).id;
   await serviceClient.from("candidates").update({ status: "completed" }).eq("id", candidateId);
 
-  if (transcript.length === 0) {
+  if (transcriptObject.length === 0) {
     return NextResponse.json({ synced: true, analyzed: false, reason: "No transcript yet — call may still be processing" });
   }
 
@@ -78,7 +78,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ in
 
     const jobData = (fullInterview!.jobs as { title: string; key_skills: string[]; screening_questions: ScreeningQuestion[] });
     const result = await analyzeInterview({
-      transcript: transcript as { role: "agent" | "user"; content: string }[],
+      transcript: transcriptObject as { role: "agent" | "user"; content: string }[],
       job: { title: jobData.title, key_skills: jobData.key_skills },
       screeningQuestions: jobData.screening_questions ?? [],
     });
