@@ -27,7 +27,7 @@ export default function Sidebar({ userEmail }: { userEmail: string }) {
     <aside className="w-60 sidebar-bg border-r border-border/40 flex flex-col h-full shrink-0">
       {/* Logo */}
       <div className="px-5 py-5 border-b border-border/30">
-        <CharlieLogo size="sm" />
+        <CharlieLogo size="xl" />
       </div>
 
       {/* Nav */}

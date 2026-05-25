@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 interface Props {
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   href?: string;
 }
 
@@ -9,6 +9,7 @@ const sizes = {
   sm: { text: 15, iW: 15, iH: 17 },
   md: { text: 18, iW: 18, iH: 21 },
   lg: { text: 22, iW: 22, iH: 25 },
+  xl: { text: 24, iW: 24, iH: 28 },
 };
 
 const COLOR = "#e8dfc8";
