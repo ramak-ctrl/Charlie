@@ -3,6 +3,7 @@ import Link from "next/link";
 interface Props {
   size?: "sm" | "md" | "lg" | "xl";
   href?: string;
+  color?: string;
 }
 
 const sizes = {
@@ -12,9 +13,10 @@ const sizes = {
   xl: { text: 24, iW: 24, iH: 28 },
 };
 
-const COLOR = "#e8dfc8";
+const DEFAULT_COLOR = "#e8dfc8";
 
-export default function CharlieLogo({ size = "md", href = "/" }: Props) {
+export default function CharlieLogo({ size = "md", href = "/", color = DEFAULT_COLOR }: Props) {
+  const COLOR = color;
   const s = sizes[size];
   return (
     <Link
