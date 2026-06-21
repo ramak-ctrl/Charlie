@@ -12,6 +12,8 @@ type Job = {
   id: string;
   title: string;
   job_type?: string;
+  client?: string | null;
+  category?: string | null;
   status: string;
   experience_min?: number | null;
   experience_max?: number | null;
@@ -19,6 +21,7 @@ type Job = {
   location?: string | null;
   priority?: string | null;
   notice_period?: string | null;
+  account_manager?: string | null;
   key_skills: string[];
   created_at: string;
   candidates: { count: number }[];
@@ -169,6 +172,8 @@ export default function JobsListClient({ jobs }: { jobs: Job[] }) {
                 <tr style={{ background: "#172F22" }}>
                   <th style={{ ...TH, width: 48, textAlign: "center" }}>#</th>
                   <th style={TH}>JOB TITLE</th>
+                  <th style={TH}>CLIENT</th>
+                  <th style={TH}>CATEGORY</th>
                   <th style={TH}>TYPE</th>
                   <th style={TH}>PRIORITY</th>
                   <th style={TH}>STATUS</th>
@@ -209,6 +214,25 @@ export default function JobsListClient({ jobs }: { jobs: Job[] }) {
                         <span style={{ fontSize: 13, fontWeight: 700, color: DARK }} className="group-hover:text-emerald-700 transition-colors">
                           {job.title}
                         </span>
+                      </td>
+
+                      {/* Client */}
+                      <td style={{ padding: "14px 14px", fontSize: 12, color: MID, whiteSpace: "nowrap", maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {job.client ?? <span style={{ color: "rgba(28,56,41,0.2)" }}>—</span>}
+                      </td>
+
+                      {/* Category */}
+                      <td style={{ padding: "14px 14px" }}>
+                        {job.category ? (
+                          <span style={{
+                            fontSize: 11, fontWeight: 500, padding: "3px 9px", borderRadius: 99,
+                            background: "rgba(99,102,241,0.08)", color: "#6366F1",
+                            border: "1px solid rgba(99,102,241,0.15)",
+                            whiteSpace: "nowrap",
+                          }}>
+                            {job.category}
+                          </span>
+                        ) : <span style={{ color: "rgba(28,56,41,0.2)", fontSize: 12 }}>—</span>}
                       </td>
 
                       {/* Type */}

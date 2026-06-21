@@ -27,6 +27,8 @@ export interface Job {
   created_by: string;
   title: string;
   job_type: JobType;
+  client: string | null;
+  category: string | null;
   experience_min: number | null;
   experience_max: number | null;
   notice_period: string | null;
@@ -34,8 +36,13 @@ export interface Job {
   location: string | null;
   priority: Priority;
   expiry_date: string | null;
+  expected_start_date: string | null;
+  publish_on_careers: boolean;
+  account_manager: string | null;
   description: string | null;
   company_intro: string | null;
+  must_have_skills: string | null;
+  nice_to_have_skills: string | null;
   key_skills: string[];
   status: JobStatus;
   created_at: string;

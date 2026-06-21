@@ -13,32 +13,44 @@ import type { Job, ScreeningQuestion } from "@/lib/types";
 const DARK   = "#1C3829";
 const MID    = "#3D6B54";
 const MUTED  = "#7A9E8E";
-const LIME   = "#B8E04A";
 const BORDER = "rgba(28,56,41,0.1)";
 
 const schema = z.object({
-  title:          z.string().min(1, "Job title is required").max(200),
-  job_type:       z.enum(["C2H", "FTE", "D2H"]).default("FTE"),
-  status:         z.enum(["draft", "active", "paused", "closed"]).default("draft"),
-  experience_min: z.number({ invalid_type_error: "Enter a number" }).int().min(0).max(30).optional(),
-  experience_max: z.number({ invalid_type_error: "Enter a number" }).int().min(0).max(30).optional(),
-  notice_period:  z.string().optional(),
-  positions:      z.number().int().min(1).max(999).default(1),
-  location:       z.string().optional(),
-  priority:       z.enum(["P0", "P1", "P2", "P3"]).default("P2"),
-  expiry_date:    z.string().optional(),
-  description:    z.string().optional(),
-  company_intro:  z.string().optional(),
-  key_skills:     z.array(z.string()).default([]),
+  title:                z.string().min(1, "Job title is required").max(200),
+  job_type:             z.enum(["C2H", "FTE", "D2H"]).default("FTE"),
+  status:               z.enum(["draft", "active", "paused", "closed"]).default("draft"),
+  client:               z.string().optional(),
+  category:             z.string().optional(),
+  experience_min:       z.number({ invalid_type_error: "Enter a number" }).int().min(0).max(30).optional(),
+  experience_max:       z.number({ invalid_type_error: "Enter a number" }).int().min(0).max(30).optional(),
+  notice_period:        z.string().optional(),
+  positions:            z.number().int().min(1).max(999).default(1),
+  expiry_date:          z.string().optional(),
+  expected_start_date:  z.string().optional(),
+  priority:             z.enum(["P0", "P1", "P2", "P3"]).default("P2"),
+  publish_on_careers:   z.boolean().default(false),
+  location:             z.string().optional(),
+  account_manager:      z.string().optional(),
+  must_have_skills:     z.string().optional(),
+  nice_to_have_skills:  z.string().optional(),
+  description:          z.string().optional(),
+  company_intro:        z.string().optional(),
+  key_skills:           z.array(z.string()).default([]),
 });
 
 type FormData = z.infer<typeof schema>;
 
 interface Props {
   job?: Job & { screening_questions?: ScreeningQuestion[] };
+  userFullName?: string;
 }
 
 const NOTICE_OPTS = ["Immediate", "15 Days", "30 Days", "45 Days", "60 Days", "90 Days"];
+const CATEGORY_OPTS = [
+  "IT / Technology", "Engineering", "Finance / Accounting",
+  "Sales", "Marketing", "Operations", "Human Resources",
+  "Legal", "Healthcare", "Other",
+];
 const PRIORITY_OPTS = [
   { value: "P0", label: "P0 — Critical" },
   { value: "P1", label: "P1 — High" },
@@ -49,7 +61,7 @@ const PRIORITY_COLORS: Record<string, string> = {
   P0: "#DC2626", P1: "#D97706", P2: "#6366F1", P3: "#7A9E8E",
 };
 
-export default function JobForm({ job }: Props) {
+export default function JobForm({ job, userFullName = "" }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const isEditing = !!job;
@@ -69,22 +81,30 @@ export default function JobForm({ job }: Props) {
   const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      title:          job?.title ?? "",
-      job_type:       (job?.job_type as FormData["job_type"]) ?? "FTE",
-      status:         (job?.status as FormData["status"]) ?? "draft",
-      experience_min: job?.experience_min ?? undefined,
-      experience_max: job?.experience_max ?? undefined,
-      notice_period:  job?.notice_period ?? "",
-      positions:      job?.positions ?? 1,
-      location:       job?.location ?? "",
-      priority:       (job?.priority as FormData["priority"]) ?? "P2",
-      expiry_date:    job?.expiry_date?.slice(0, 10) ?? "",
-      description:    job?.description ?? "",
-      company_intro:  job?.company_intro ?? "",
+      title:               job?.title ?? "",
+      job_type:            (job?.job_type as FormData["job_type"]) ?? "FTE",
+      status:              (job?.status as FormData["status"]) ?? "draft",
+      client:              job?.client ?? "",
+      category:            job?.category ?? "",
+      experience_min:      job?.experience_min ?? undefined,
+      experience_max:      job?.experience_max ?? undefined,
+      notice_period:       job?.notice_period ?? "",
+      positions:           job?.positions ?? 1,
+      expiry_date:         job?.expiry_date?.slice(0, 10) ?? "",
+      expected_start_date: job?.expected_start_date?.slice(0, 10) ?? "",
+      priority:            (job?.priority as FormData["priority"]) ?? "P2",
+      publish_on_careers:  job?.publish_on_careers ?? false,
+      location:            job?.location ?? "",
+      account_manager:     job?.account_manager ?? userFullName,
+      must_have_skills:    job?.must_have_skills ?? "",
+      nice_to_have_skills: job?.nice_to_have_skills ?? "",
+      description:         job?.description ?? "",
+      company_intro:       job?.company_intro ?? "",
     },
   });
 
   const priority = watch("priority");
+  const publishValue = watch("publish_on_careers");
 
   function toggleSection(i: number) {
     setOpen(prev => prev.includes(i) ? prev.filter(x => x !== i) : [...prev, i]);
@@ -103,9 +123,15 @@ export default function JobForm({ job }: Props) {
         ...data,
         key_skills: skills,
         screening_questions: questions,
-        expiry_date: data.expiry_date || null,
-        notice_period: data.notice_period || null,
-        location: data.location || null,
+        expiry_date:         data.expiry_date         || null,
+        expected_start_date: data.expected_start_date || null,
+        notice_period:       data.notice_period       || null,
+        location:            data.location            || null,
+        client:              data.client              || null,
+        category:            data.category            || null,
+        account_manager:     data.account_manager     || null,
+        must_have_skills:    data.must_have_skills    || null,
+        nice_to_have_skills: data.nice_to_have_skills || null,
       };
       const url    = isEditing ? `/api/jobs/${job!.id}` : "/api/jobs";
       const method = isEditing ? "PUT" : "POST";
@@ -137,9 +163,10 @@ export default function JobForm({ job }: Props) {
 
       {/* ── Section 1: Job Details ── */}
       <Section title="Job Details" index={0} open={open.includes(0)} onToggle={toggleSection}>
-        {/* Title */}
+
+        {/* JOB TITLE (full width) */}
         <div style={{ marginBottom: 16 }}>
-          <Label text="Job Title" required />
+          <Label text="JOB TITLE" required />
           <input
             {...register("title")}
             placeholder="e.g. Senior Software Engineer"
@@ -150,50 +177,30 @@ export default function JobForm({ job }: Props) {
           {errors.title && <Err msg={errors.title.message!} />}
         </div>
 
-        {/* Row: Job Type + Status */}
-        <div style={grid2}>
+        {/* Row: JOB TYPE | STATUS | CLIENT */}
+        <div style={{ ...grid3, marginBottom: 14 }}>
           <div>
-            <Label text="Job Type" required />
-            <select {...register("job_type")} style={selectStyle}
-              onFocus={e => (e.target.style.borderColor = DARK)}
-              onBlur={e => (e.target.style.borderColor = BORDER)}>
-              <option value="FTE">FTE — Full Time</option>
+            <Label text="JOB TYPE" required />
+            <Select name="job_type" register={register}>
               <option value="C2H">C2H — Contract to Hire</option>
+              <option value="FTE">FTE — Full Time</option>
               <option value="D2H">D2H — Direct Hire</option>
-            </select>
+            </Select>
           </div>
           <div>
-            <Label text="Status" required />
-            <select {...register("status")} style={selectStyle}
-              onFocus={e => (e.target.style.borderColor = DARK)}
-              onBlur={e => (e.target.style.borderColor = BORDER)}>
+            <Label text="STATUS" required />
+            <Select name="status" register={register}>
               <option value="draft">Draft</option>
               <option value="active">Active</option>
               <option value="paused">Paused</option>
               <option value="closed">Closed</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Row: Experience */}
-        <div style={grid2}>
-          <div>
-            <Label text="Experience Min (yrs)" />
-            <input
-              type="number" min={0} max={30}
-              {...register("experience_min", { valueAsNumber: true })}
-              placeholder="0"
-              style={inputStyle}
-              onFocus={e => (e.target.style.borderColor = DARK)}
-              onBlur={e => (e.target.style.borderColor = BORDER)}
-            />
+            </Select>
           </div>
           <div>
-            <Label text="Experience Max (yrs)" />
+            <Label text="CLIENT" />
             <input
-              type="number" min={0} max={30}
-              {...register("experience_max", { valueAsNumber: true })}
-              placeholder="5"
+              {...register("client")}
+              placeholder="Client / Company name"
               style={inputStyle}
               onFocus={e => (e.target.style.borderColor = DARK)}
               onBlur={e => (e.target.style.borderColor = BORDER)}
@@ -201,19 +208,46 @@ export default function JobForm({ job }: Props) {
           </div>
         </div>
 
-        {/* Row: Notice Period + Positions */}
-        <div style={grid2}>
+        {/* Row: CATEGORY | EXPERIENCE (Min–Max) | NOTICE PERIOD | POSITIONS */}
+        <div style={{ ...grid4, marginBottom: 14 }}>
           <div>
-            <Label text="Expected Notice Period" />
-            <select {...register("notice_period")} style={selectStyle}
-              onFocus={e => (e.target.style.borderColor = DARK)}
-              onBlur={e => (e.target.style.borderColor = BORDER)}>
+            <Label text="CATEGORY" />
+            <Select name="category" register={register}>
+              <option value="">— Select —</option>
+              {CATEGORY_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
+            </Select>
+          </div>
+          <div>
+            <Label text="EXPERIENCE (YEARS)" />
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <input
+                type="number" min={0} max={30}
+                {...register("experience_min", { valueAsNumber: true })}
+                placeholder="Min"
+                style={{ ...inputStyle, flex: 1, minWidth: 0 }}
+                onFocus={e => (e.target.style.borderColor = DARK)}
+                onBlur={e => (e.target.style.borderColor = BORDER)}
+              />
+              <span style={{ fontSize: 12, color: MUTED, flexShrink: 0 }}>to</span>
+              <input
+                type="number" min={0} max={30}
+                {...register("experience_max", { valueAsNumber: true })}
+                placeholder="Max"
+                style={{ ...inputStyle, flex: 1, minWidth: 0 }}
+                onFocus={e => (e.target.style.borderColor = DARK)}
+                onBlur={e => (e.target.style.borderColor = BORDER)}
+              />
+            </div>
+          </div>
+          <div>
+            <Label text="EXPECTED NOTICE PERIOD" />
+            <Select name="notice_period" register={register}>
               <option value="">— Select —</option>
               {NOTICE_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
-            </select>
+            </Select>
           </div>
           <div>
-            <Label text="No. of Positions" required />
+            <Label text="POSITIONS" required />
             <input
               type="number" min={1} max={999}
               {...register("positions", { valueAsNumber: true })}
@@ -226,26 +260,34 @@ export default function JobForm({ job }: Props) {
           </div>
         </div>
 
-        {/* Row: Location + Priority */}
-        <div style={grid2}>
+        {/* Row: EXPIRY DATE | EXPECTED START DATE | PRIORITY | PUBLISH ON CAREERS */}
+        <div style={{ ...grid4, marginBottom: 14 }}>
           <div>
-            <Label text="Location" />
+            <Label text="EXPIRY DATE" />
             <input
-              {...register("location")}
-              placeholder="e.g. Bengaluru, Remote"
+              type="date"
+              {...register("expiry_date")}
               style={inputStyle}
               onFocus={e => (e.target.style.borderColor = DARK)}
               onBlur={e => (e.target.style.borderColor = BORDER)}
             />
           </div>
           <div>
-            <Label text="Priority" required />
+            <Label text="EXPECTED START DATE" />
+            <input
+              type="date"
+              {...register("expected_start_date")}
+              style={inputStyle}
+              onFocus={e => (e.target.style.borderColor = DARK)}
+              onBlur={e => (e.target.style.borderColor = BORDER)}
+            />
+          </div>
+          <div>
+            <Label text="PRIORITY" required />
             <div style={{ position: "relative" }}>
-              <select {...register("priority")} style={{ ...selectStyle, paddingLeft: 36 }}
-                onFocus={e => (e.target.style.borderColor = DARK)}
-                onBlur={e => (e.target.style.borderColor = BORDER)}>
+              <Select name="priority" register={register} style={{ paddingLeft: 36 }}>
                 {PRIORITY_OPTS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
+              </Select>
               <span style={{
                 position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)",
                 width: 10, height: 10, borderRadius: "50%",
@@ -254,54 +296,100 @@ export default function JobForm({ job }: Props) {
               }} />
             </div>
           </div>
+          <div>
+            <Label text="PUBLISH ON CAREERS WEBSITE" />
+            <Select name="publish_on_careers" register={register} valueAsBoolean>
+              <option value="false">No</option>
+              <option value="true">Yes</option>
+            </Select>
+          </div>
         </div>
 
-        {/* Expiry Date */}
-        <div style={{ maxWidth: "50%", paddingRight: 8 }}>
-          <Label text="Expiry Date" />
-          <input
-            type="date"
-            {...register("expiry_date")}
-            style={inputStyle}
-            onFocus={e => (e.target.style.borderColor = DARK)}
-            onBlur={e => (e.target.style.borderColor = BORDER)}
-          />
+        {/* Row: LOCATION | ACCOUNT MANAGER */}
+        <div style={grid2}>
+          <div>
+            <Label text="JOB LOCATION" />
+            <input
+              {...register("location")}
+              placeholder="e.g. Bengaluru, Remote, Pan India"
+              style={inputStyle}
+              onFocus={e => (e.target.style.borderColor = DARK)}
+              onBlur={e => (e.target.style.borderColor = BORDER)}
+            />
+          </div>
+          <div>
+            <Label text="ACCOUNT MANAGER" />
+            <input
+              {...register("account_manager")}
+              placeholder="Account manager name"
+              style={inputStyle}
+              onFocus={e => (e.target.style.borderColor = DARK)}
+              onBlur={e => (e.target.style.borderColor = BORDER)}
+            />
+          </div>
         </div>
       </Section>
 
-      {/* ── Section 2: Description & Company ── */}
-      <Section title="Description & Company" index={1} open={open.includes(1)} onToggle={toggleSection}>
+      {/* ── Section 2: Skills & JD ── */}
+      <Section title="Skills & JD" index={1} open={open.includes(1)} onToggle={toggleSection}>
+
+        {/* MUST HAVE SKILLS | NICE TO HAVE SKILLS */}
+        <div style={{ ...grid2, marginBottom: 14 }}>
+          <div>
+            <Label text="MUST HAVE SKILLS" />
+            <textarea
+              {...register("must_have_skills")}
+              rows={4}
+              placeholder="e.g. React, Node.js, 5+ years experience..."
+              style={{ ...inputStyle, height: "auto", resize: "vertical" }}
+              onFocus={e => (e.target.style.borderColor = DARK)}
+              onBlur={e => (e.target.style.borderColor = BORDER)}
+            />
+          </div>
+          <div>
+            <Label text="NICE TO HAVE SKILLS" />
+            <textarea
+              {...register("nice_to_have_skills")}
+              rows={4}
+              placeholder="e.g. AWS, Docker, GraphQL..."
+              style={{ ...inputStyle, height: "auto", resize: "vertical" }}
+              onFocus={e => (e.target.style.borderColor = DARK)}
+              onBlur={e => (e.target.style.borderColor = BORDER)}
+            />
+          </div>
+        </div>
+
+        {/* JOB DESCRIPTION */}
         <div style={{ marginBottom: 14 }}>
-          <Label text="Job Description" />
+          <Label text="JOB DESCRIPTION" />
           <textarea
             {...register("description")}
-            rows={5}
+            rows={6}
             placeholder="Describe the role, responsibilities, and requirements..."
             style={{ ...inputStyle, height: "auto", resize: "vertical" }}
             onFocus={e => (e.target.style.borderColor = DARK)}
             onBlur={e => (e.target.style.borderColor = BORDER)}
           />
         </div>
+
+        {/* COMPANY INFO */}
         <div>
-          <Label text="Company Introduction" />
+          <Label text="COMPANY INFO" />
           <textarea
             {...register("company_intro")}
             rows={3}
-            placeholder="What Charlie will tell candidates at the start of the interview..."
+            placeholder="Company / about text — read aloud by Charlie at interview start"
             style={{ ...inputStyle, height: "auto", resize: "vertical" }}
             onFocus={e => (e.target.style.borderColor = DARK)}
             onBlur={e => (e.target.style.borderColor = BORDER)}
           />
-          <p style={{ fontSize: 12, color: MUTED, marginTop: 4 }}>
-            Read aloud by Charlie at interview start.
-          </p>
         </div>
       </Section>
 
-      {/* ── Section 3: Key Skills ── */}
-      <Section title="Key Skills" index={2} open={open.includes(2)} onToggle={toggleSection}>
+      {/* ── Section 3: Interview Skills (for candidate self-rating) ── */}
+      <Section title="Interview Skills" index={2} open={open.includes(2)} onToggle={toggleSection}>
         <p style={{ fontSize: 13, color: MUTED, marginBottom: 12 }}>
-          Candidates self-rate each skill on a 1–5 scale during the interview.
+          Candidates self-rate each skill on a 1–5 scale during the Charlie interview.
         </p>
         <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
           <input
@@ -380,7 +468,8 @@ export default function JobForm({ job }: Props) {
             display: "inline-flex", alignItems: "center", gap: 8,
             padding: "10px 24px", borderRadius: 100,
             background: submitting ? MID : DARK, color: "#fff",
-            fontWeight: 700, fontSize: 14, border: "none", cursor: submitting ? "not-allowed" : "pointer",
+            fontWeight: 700, fontSize: 14, border: "none",
+            cursor: submitting ? "not-allowed" : "pointer",
             boxShadow: "0 4px 16px rgba(28,56,41,0.25)",
           }}
         >
@@ -414,20 +503,20 @@ function Section({
         style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
           width: "100%", padding: "14px 20px",
-          background: "none", border: "none", cursor: "pointer",
+          background: "rgba(28,56,41,0.02)", border: "none", cursor: "pointer",
           borderBottom: open ? `1px solid ${BORDER}` : "none",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{
             width: 22, height: 22, borderRadius: 6,
-            background: "rgba(28,56,41,0.07)",
+            background: "rgba(28,56,41,0.08)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 11, fontWeight: 800, color: DARK,
+            fontSize: 11, fontWeight: 800, color: "#1C3829",
           }}>
             {index + 1}
           </span>
-          <span style={{ fontSize: 14, fontWeight: 700, color: DARK }}>{title}</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "#1C3829" }}>{title}</span>
         </div>
         {open
           ? <ChevronDown style={{ width: 16, height: 16, color: MUTED }} />
@@ -445,7 +534,11 @@ function Section({
 
 function Label({ text, required }: { text: string; required?: boolean }) {
   return (
-    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: DARK, marginBottom: 6, opacity: 0.8 }}>
+    <label style={{
+      display: "block", fontSize: 11, fontWeight: 700,
+      color: "#3D6B54", marginBottom: 6,
+      textTransform: "uppercase", letterSpacing: "0.06em",
+    }}>
       {text}
       {required && <span style={{ color: "#DC2626", marginLeft: 2 }}>*</span>}
     </label>
@@ -456,11 +549,34 @@ function Err({ msg }: { msg: string }) {
   return <p style={{ fontSize: 12, color: "#DC2626", marginTop: 4 }}>{msg}</p>;
 }
 
+function Select({
+  name, register, children, style, valueAsBoolean,
+}: {
+  name: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  register: any;
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+  valueAsBoolean?: boolean;
+}) {
+  const regOpts = valueAsBoolean ? { setValueAs: (v: string) => v === "true" } : {};
+  return (
+    <select
+      {...register(name, regOpts)}
+      style={{ ...selectStyle, ...style }}
+      onFocus={(e: React.FocusEvent<HTMLSelectElement>) => (e.target.style.borderColor = DARK)}
+      onBlur={(e: React.FocusEvent<HTMLSelectElement>) => (e.target.style.borderColor = BORDER)}
+    >
+      {children}
+    </select>
+  );
+}
+
 const inputStyle: React.CSSProperties = {
   width: "100%", padding: "10px 12px",
   background: "#fff",
   border: `1px solid ${BORDER}`,
-  borderRadius: 10, fontSize: 14, color: DARK,
+  borderRadius: 10, fontSize: 13, color: DARK,
   outline: "none", transition: "border-color 0.15s",
   boxSizing: "border-box",
 };
@@ -476,4 +592,12 @@ const selectStyle: React.CSSProperties = {
 
 const grid2: React.CSSProperties = {
   display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14,
+};
+
+const grid3: React.CSSProperties = {
+  display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12,
+};
+
+const grid4: React.CSSProperties = {
+  display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12,
 };
