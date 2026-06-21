@@ -8,8 +8,8 @@ import CharlieLogo from "@/components/CharlieLogo";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/jobs", label: "Jobs", icon: Briefcase },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/jobs",      label: "Jobs",      icon: Briefcase },
+  { href: "/settings",  label: "Settings",  icon: Settings },
 ];
 
 export default function Sidebar({ userEmail }: { userEmail: string }) {
@@ -24,14 +24,18 @@ export default function Sidebar({ userEmail }: { userEmail: string }) {
   }
 
   return (
-    <aside className="w-60 sidebar-bg border-r border-border/40 flex flex-col h-full shrink-0">
+    <aside className="w-60 sidebar-bg flex flex-col h-full shrink-0">
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-border/30">
+      <div style={{
+        padding: "22px 20px 20px",
+        borderBottom: "1px solid rgba(255,255,255,0.05)",
+        background: "linear-gradient(180deg, rgba(124,58,237,0.06) 0%, transparent 100%)",
+      }}>
         <CharlieLogo size="xl" />
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-5 space-y-0.5" aria-label="Main navigation">
+      <nav className="flex-1 px-3 py-5 space-y-1" aria-label="Main navigation">
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = pathname === item.href || pathname.startsWith(item.href + "/");
@@ -40,14 +44,23 @@ export default function Sidebar({ userEmail }: { userEmail: string }) {
               key={item.href}
               href={item.href}
               aria-current={active ? "page" : undefined}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
-                active
-                  ? "bg-primary/10 text-primary border border-primary/20"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground border border-transparent"
-              )}
+              style={active ? {
+                display: "flex", alignItems: "center", gap: 12,
+                padding: "10px 12px", borderRadius: 10, fontSize: 14, fontWeight: 600,
+                color: "#A78BFA",
+                background: "linear-gradient(90deg, rgba(124,58,237,0.18) 0%, rgba(124,58,237,0.04) 100%)",
+                borderLeft: "2px solid rgba(167,139,250,0.8)",
+                textDecoration: "none",
+              } : {
+                display: "flex", alignItems: "center", gap: 12,
+                padding: "10px 14px", borderRadius: 10, fontSize: 14, fontWeight: 500,
+                color: "rgba(255,255,255,0.4)",
+                textDecoration: "none",
+                transition: "color 0.15s, background 0.15s",
+              }}
+              className={!active ? "hover:bg-white/5 hover:!text-white/70 transition-all" : ""}
             >
-              <Icon className="h-4 w-4 shrink-0" />
+              <Icon style={{ width: 16, height: 16, flexShrink: 0 }} />
               {item.label}
             </Link>
           );
@@ -55,16 +68,24 @@ export default function Sidebar({ userEmail }: { userEmail: string }) {
       </nav>
 
       {/* User */}
-      <div className="px-3 py-4 border-t border-border/30">
-        <div className="px-3 py-2 mb-1">
-          <p className="text-[11px] text-muted-foreground/70 truncate">{userEmail}</p>
+      <div style={{ padding: "12px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ padding: "8px 12px", marginBottom: 4 }}>
+          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {userEmail}
+          </p>
         </div>
         <button
           onClick={handleSignOut}
           aria-label="Sign out"
-          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive border border-transparent transition-all duration-150"
+          style={{
+            display: "flex", alignItems: "center", gap: 12, width: "100%",
+            padding: "10px 12px", borderRadius: 10, fontSize: 14, fontWeight: 500,
+            color: "rgba(255,255,255,0.35)", background: "none", border: "none", cursor: "pointer",
+            transition: "color 0.15s, background 0.15s",
+          }}
+          className="hover:bg-red-500/10 hover:!text-red-400 transition-all"
         >
-          <LogOut className="h-4 w-4 shrink-0" />
+          <LogOut style={{ width: 16, height: 16, flexShrink: 0 }} />
           Sign out
         </button>
       </div>

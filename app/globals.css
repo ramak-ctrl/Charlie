@@ -4,66 +4,85 @@
 
 @layer base {
   :root {
-    --background: 222 22% 5%;
+    --background: 228 28% 4%;
     --foreground: 210 20% 93%;
-    --card: 222 20% 8%;
+    --card: 228 25% 6%;
     --card-foreground: 210 20% 93%;
-    --popover: 222 20% 8%;
+    --popover: 228 25% 6%;
     --popover-foreground: 210 20% 93%;
-    --primary: 243 75% 63%;
+    --primary: 252 83% 65%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 222 18% 12%;
+    --secondary: 228 22% 10%;
     --secondary-foreground: 210 15% 75%;
-    --muted: 222 18% 11%;
-    --muted-foreground: 220 12% 48%;
-    --accent: 222 18% 14%;
+    --muted: 228 22% 9%;
+    --muted-foreground: 220 12% 46%;
+    --accent: 228 22% 12%;
     --accent-foreground: 210 20% 93%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 222 18% 13%;
-    --input: 222 18% 12%;
-    --ring: 243 75% 63%;
-    --radius: 0.625rem;
-    --sidebar: 222 25% 3.5%;
+    --border: 228 20% 11%;
+    --input: 228 20% 10%;
+    --ring: 252 83% 65%;
+    --radius: 0.75rem;
+    --sidebar: 228 32% 2.5%;
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
+  * { @apply border-border; }
+
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply antialiased;
     font-family: 'Inter', system-ui, sans-serif;
+    background:
+      radial-gradient(ellipse 80% 55% at 5% -5%,  rgba(124, 58, 237, 0.12) 0%, transparent 55%),
+      radial-gradient(ellipse 60% 45% at 95% 105%, rgba(37, 99, 235, 0.08)  0%, transparent 55%),
+      hsl(var(--background));
+    background-attachment: fixed;
+    color: hsl(var(--foreground));
   }
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-    @apply bg-border rounded-full;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted-foreground/30;
-  }
+
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
 }
 
 @layer utilities {
+  /* ── Glass card — used across all inner pages ── */
   .glass-card {
-    @apply bg-card border border-border/60 rounded-xl;
+    background: linear-gradient(135deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.01) 100%);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    box-shadow:
+      0 4px 24px rgba(0,0,0,0.25),
+      inset 0 1px 0 rgba(255,255,255,0.05);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
+  .glass-card:hover {
+    border-color: rgba(255,255,255,0.12);
+  }
+
+  /* ── Sidebar ── */
   .sidebar-bg {
     background: hsl(var(--sidebar));
+    border-right: 1px solid rgba(255,255,255,0.05);
   }
+
+  /* ── Stat card accent glow variants ── */
+  .glow-indigo  { box-shadow: 0 0 40px -8px rgba(99,102,241,0.4),  0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06); }
+  .glow-emerald { box-shadow: 0 0 40px -8px rgba(16,185,129,0.35), 0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06); }
+  .glow-blue    { box-shadow: 0 0 40px -8px rgba(59,130,246,0.35), 0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06); }
+  .glow-violet  { box-shadow: 0 0 40px -8px rgba(139,92,246,0.4),  0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06); }
 }
 
 @keyframes pulse-ring {
-  0% { transform: scale(1); opacity: 0.5; }
+  0%   { transform: scale(1);   opacity: 0.5; }
   100% { transform: scale(1.6); opacity: 0; }
 }
-.animate-pulse-ring {
-  animation: pulse-ring 1.8s ease-out infinite;
+.animate-pulse-ring { animation: pulse-ring 1.8s ease-out infinite; }
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
 }

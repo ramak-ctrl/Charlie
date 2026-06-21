@@ -106,7 +106,7 @@ export default function JobForm({ job }: Props) {
           <div className="space-y-2">
             <Label htmlFor="title">Job Title *</Label>
             <Input id="title" placeholder="e.g. Senior Software Engineer" {...register("title")} />
-            {errors.title && <p className="text-sm text-rose-600">{errors.title.message}</p>}
+            {errors.title && <p className="text-sm text-rose-400">{errors.title.message}</p>}
           </div>
 
           <div className="space-y-2">
@@ -127,7 +127,7 @@ export default function JobForm({ job }: Props) {
               rows={3}
               {...register("company_intro")}
             />
-            <p className="text-xs text-gray-400">This text is read aloud by Charlie during the interview opening.</p>
+            <p className="text-xs text-slate-500">This text is read aloud by Charlie during the interview opening.</p>
           </div>
 
           <div className="space-y-2">
@@ -150,7 +150,7 @@ export default function JobForm({ job }: Props) {
           <CardTitle className="text-base">Key Skills</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-slate-400">
             Candidates will self-rate each skill on a 1–5 scale during the interview.
           </p>
           <div className="flex gap-2">
@@ -168,13 +168,13 @@ export default function JobForm({ job }: Props) {
           {skills.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {skills.map((s) => (
-                <div key={s} className="flex items-center gap-1 bg-indigo-50 text-indigo-700 text-sm px-3 py-1 rounded-full border border-indigo-100">
+                <div key={s} className="flex items-center gap-1 bg-indigo-500/15 text-indigo-300 text-sm px-3 py-1 rounded-full border border-indigo-500/25">
                   <span>{s}</span>
                   <button
                     type="button"
                     onClick={() => removeSkill(s)}
                     aria-label={`Remove ${s}`}
-                    className="hover:text-indigo-900 ml-1"
+                    className="hover:text-indigo-100 ml-1"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -191,7 +191,7 @@ export default function JobForm({ job }: Props) {
           <CardTitle className="text-base">Screening Questions</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-slate-400 mb-4">
             These questions are asked by Charlie during the screening phase. Reorder, edit, add, or remove as needed.
           </p>
           <ScreeningQuestionsEditor questions={questions} onChange={setQuestions} />
