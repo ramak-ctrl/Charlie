@@ -1,4 +1,6 @@
 export type JobStatus = "draft" | "active" | "paused" | "closed";
+export type JobType = "C2H" | "FTE" | "D2H";
+export type Priority = "P0" | "P1" | "P2" | "P3";
 export type CandidateStatus = "invited" | "started" | "completed" | "reviewed";
 export type InterviewStatus = "pending" | "in_progress" | "completed" | "failed" | "no_show";
 export type Recommendation = "strong_yes" | "yes" | "maybe" | "no";
@@ -24,6 +26,14 @@ export interface Job {
   org_id: string | null;
   created_by: string;
   title: string;
+  job_type: JobType;
+  experience_min: number | null;
+  experience_max: number | null;
+  notice_period: string | null;
+  positions: number;
+  location: string | null;
+  priority: Priority;
+  expiry_date: string | null;
   description: string | null;
   company_intro: string | null;
   key_skills: string[];
@@ -50,6 +60,14 @@ export interface Candidate {
   name: string;
   email: string;
   phone: string | null;
+  experience: string | null;
+  relevant_experience: string | null;
+  notice_period: string | null;
+  current_ctc: string | null;
+  expected_ctc: string | null;
+  current_location: string | null;
+  linkedin_url: string | null;
+  primary_skills: string[];
   status: CandidateStatus;
   invited_at: string;
   created_at: string;
@@ -135,6 +153,14 @@ export interface JobWithCandidates extends Job {
 // API request/response types
 export interface CreateJobRequest {
   title: string;
+  job_type?: JobType;
+  experience_min?: number;
+  experience_max?: number;
+  notice_period?: string;
+  positions?: number;
+  location?: string;
+  priority?: Priority;
+  expiry_date?: string;
   description?: string;
   company_intro?: string;
   key_skills: string[];
@@ -142,7 +168,18 @@ export interface CreateJobRequest {
 }
 
 export interface SendInviteRequest {
-  candidates: { name: string; email: string; phone?: string }[];
+  candidates: {
+    name: string;
+    email: string;
+    phone?: string;
+    experience?: string;
+    notice_period?: string;
+    current_ctc?: string;
+    expected_ctc?: string;
+    current_location?: string;
+    linkedin_url?: string;
+    primary_skills?: string[];
+  }[];
 }
 
 export interface CreateCallResponse {

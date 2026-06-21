@@ -1,5 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 
+const DARK   = "#1C3829";
+const MID    = "#3D6B54";
+const MUTED  = "#7A9E8E";
+const BORDER = "rgba(28,56,41,0.09)";
+
 export default async function SettingsPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -8,19 +13,19 @@ export default async function SettingsPage() {
     .from("profiles").select("*").eq("id", user!.id).single();
 
   return (
-    <div className="p-8 max-w-2xl mx-auto">
-      <div className="mb-10">
-        <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-1px", color: "#fff", marginBottom: 4 }}>Settings</h1>
-        <p style={{ fontSize: 14, color: "rgba(255,255,255,0.35)" }}>Manage your account and preferences.</p>
+    <div style={{ padding: "28px 32px", maxWidth: 860 }}>
+      <div style={{ marginBottom: 28 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.8px", color: DARK, marginBottom: 2 }}>Settings</h1>
+        <p style={{ fontSize: 13, color: MUTED }}>Manage your account and preferences.</p>
       </div>
 
-      <div className="space-y-4">
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
         {/* Account */}
-        <div className="glass-card overflow-hidden">
-          <div style={{ padding: "16px 24px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-            <h2 style={{ fontSize: 13, fontWeight: 700, color: "#fff", letterSpacing: "-0.2px" }}>Account</h2>
-            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>Your account details</p>
+        <div className="glass-card" style={{ overflow: "hidden" }}>
+          <div style={{ padding: "16px 24px", borderBottom: `1px solid ${BORDER}` }}>
+            <h2 style={{ fontSize: 13, fontWeight: 700, color: DARK, letterSpacing: "-0.2px" }}>Account</h2>
+            <p style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>Your account details</p>
           </div>
           <div style={{ padding: "8px 0" }}>
             {[
@@ -31,20 +36,20 @@ export default async function SettingsPage() {
               <div key={row.label} style={{
                 display: "flex", justifyContent: "space-between", alignItems: "center",
                 padding: "12px 24px",
-                borderBottom: i < arr.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                borderBottom: i < arr.length - 1 ? `1px solid ${BORDER}` : "none",
               }}>
-                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>{row.label}</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: "#fff", textTransform: "capitalize" }}>{row.value}</span>
+                <span style={{ fontSize: 13, color: MUTED }}>{row.label}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: DARK, textTransform: "capitalize" }}>{row.value}</span>
               </div>
             ))}
           </div>
         </div>
 
         {/* Data & Privacy */}
-        <div className="glass-card overflow-hidden">
-          <div style={{ padding: "16px 24px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-            <h2 style={{ fontSize: 13, fontWeight: 700, color: "#fff", letterSpacing: "-0.2px" }}>Data &amp; Privacy</h2>
-            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>How candidate data is handled</p>
+        <div className="glass-card" style={{ overflow: "hidden" }}>
+          <div style={{ padding: "16px 24px", borderBottom: `1px solid ${BORDER}` }}>
+            <h2 style={{ fontSize: 13, fontWeight: 700, color: DARK, letterSpacing: "-0.2px" }}>Data &amp; Privacy</h2>
+            <p style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>How candidate data is handled</p>
           </div>
           <div style={{ padding: "16px 24px", display: "flex", flexDirection: "column", gap: 10 }}>
             {[
@@ -54,17 +59,17 @@ export default async function SettingsPage() {
               "Charlie never makes final hiring decisions — all recommendations require human confirmation.",
             ].map((text, i) => (
               <div key={i} style={{ display: "flex", gap: 10 }}>
-                <span style={{ color: "rgba(167,139,250,0.7)", flexShrink: 0, marginTop: 1 }}>•</span>
-                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", lineHeight: 1.7 }}>{text}</p>
+                <span style={{ color: "#B8E04A", flexShrink: 0, marginTop: 1 }}>•</span>
+                <p style={{ fontSize: 13, color: MID, lineHeight: 1.7 }}>{text}</p>
               </div>
             ))}
           </div>
         </div>
 
         {/* Integrations */}
-        <div className="glass-card overflow-hidden">
-          <div style={{ padding: "16px 24px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-            <h2 style={{ fontSize: 13, fontWeight: 700, color: "#fff", letterSpacing: "-0.2px" }}>Integrations</h2>
+        <div className="glass-card" style={{ overflow: "hidden" }}>
+          <div style={{ padding: "16px 24px", borderBottom: `1px solid ${BORDER}` }}>
+            <h2 style={{ fontSize: 13, fontWeight: 700, color: DARK, letterSpacing: "-0.2px" }}>Integrations</h2>
           </div>
           <div style={{ padding: "8px 0" }}>
             {[
@@ -75,13 +80,13 @@ export default async function SettingsPage() {
               <div key={row.label} style={{
                 display: "flex", justifyContent: "space-between", alignItems: "center",
                 padding: "12px 24px",
-                borderBottom: i < arr.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                borderBottom: i < arr.length - 1 ? `1px solid ${BORDER}` : "none",
               }}>
-                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)" }}>{row.label}</span>
+                <span style={{ fontSize: 13, color: MID }}>{row.label}</span>
                 <span style={{
                   fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 99,
-                  background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)",
-                  border: "1px solid rgba(255,255,255,0.08)",
+                  background: "rgba(28,56,41,0.06)", color: MUTED,
+                  border: `1px solid ${BORDER}`,
                 }}>
                   {row.badge}
                 </span>

@@ -1,16 +1,21 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { Briefcase, Users, CheckCircle2, Plus, ArrowRight, TrendingUp } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
 type Job = { id: string; title: string; status: string; created_at: string };
 
+const DARK  = "#1C3829";
+const MID   = "#3D6B54";
+const MUTED = "#7A9E8E";
+const LIME  = "#B8E04A";
+const BORDER = "rgba(28,56,41,0.09)";
+
 const STAT_DEFS = [
-  { label: "Total Jobs",           accent: "#6366F1", glow: "rgba(99,102,241,0.3)",  glowClass: "glow-indigo",  icon: Briefcase  },
-  { label: "Active Jobs",          accent: "#10B981", glow: "rgba(16,185,129,0.25)", glowClass: "glow-emerald", icon: TrendingUp },
-  { label: "Total Candidates",     accent: "#3B82F6", glow: "rgba(59,130,246,0.25)", glowClass: "glow-blue",    icon: Users      },
-  { label: "Completed Interviews", accent: "#8B5CF6", glow: "rgba(139,92,246,0.3)",  glowClass: "glow-violet",  icon: CheckCircle2 },
+  { label: "Total Jobs",           icon: Briefcase,   accent: "#6366F1", glow: "glow-indigo"  },
+  { label: "Active Jobs",          icon: TrendingUp,  accent: "#10B981", glow: "glow-emerald" },
+  { label: "Total Candidates",     icon: Users,       accent: "#3B82F6", glow: "glow-blue"    },
+  { label: "Completed Interviews", icon: CheckCircle2,accent: "#8B5CF6", glow: "glow-violet"  },
 ];
 
 export default async function DashboardPage() {
@@ -33,50 +38,55 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
+    <div style={{ padding: "28px 32px" }}>
 
       {/* ── Header ── */}
-      <div className="flex items-center justify-between mb-10">
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 32 }}>
         <div>
-          <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-1px", color: "#fff", marginBottom: 4 }}>Dashboard</h1>
-          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.35)" }}>Welcome back. Here&apos;s your hiring overview.</p>
+          <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.8px", color: DARK, marginBottom: 2 }}>
+            Welcome back 👋
+          </h1>
+          <p style={{ fontSize: 13, color: MUTED }}>Here&apos;s your hiring overview.</p>
         </div>
-        <Link href="/jobs/new">
-          <Button style={{ background: "linear-gradient(135deg, #7C3AED, #6D28D9)", border: "1px solid rgba(124,58,237,0.6)", boxShadow: "0 4px 20px rgba(124,58,237,0.4)", borderRadius: 10, fontWeight: 600, height: 40, paddingLeft: 18, paddingRight: 18 }}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Job
-          </Button>
+        <Link href="/jobs/new" style={{
+          display: "inline-flex", alignItems: "center", gap: 8,
+          background: DARK, color: "#fff",
+          padding: "10px 20px", borderRadius: 100,
+          fontWeight: 600, fontSize: 13, textDecoration: "none",
+          boxShadow: "0 4px 16px rgba(28,56,41,0.25)",
+        }}>
+          <Plus style={{ width: 14, height: 14 }} />
+          New Job
         </Link>
       </div>
 
       {/* ── Stat cards ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, marginBottom: 28 }}>
         {STAT_DEFS.map((s, i) => (
           <StatCard key={s.label} {...s} value={statValues[i]} />
         ))}
       </div>
 
       {/* ── Recent Jobs ── */}
-      <div className="glass-card overflow-hidden">
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 24px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-          <h2 style={{ fontSize: 14, fontWeight: 700, color: "#fff", letterSpacing: "-0.3px" }}>Recent Jobs</h2>
-          <Link href="/jobs">
-            <Button variant="ghost" size="sm" style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", gap: 4 }} className="hover:text-white/70 flex items-center gap-1">
-              View all <ArrowRight className="h-3 w-3" />
-            </Button>
+      <div className="glass-card" style={{ overflow: "hidden" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px", borderBottom: `1px solid ${BORDER}` }}>
+          <h2 style={{ fontSize: 14, fontWeight: 700, color: DARK }}>Recent Jobs</h2>
+          <Link href="/jobs" style={{
+            display: "inline-flex", alignItems: "center", gap: 4,
+            fontSize: 12, fontWeight: 600, color: MID, textDecoration: "none",
+          }} className="hover:text-green-900 transition-colors">
+            View all <ArrowRight style={{ width: 13, height: 13 }} />
           </Link>
         </div>
 
         {allJobs.length === 0 ? (
           <div style={{ textAlign: "center", padding: "64px 40px" }}>
-            <div style={{ display: "inline-flex", padding: 18, borderRadius: "50%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", marginBottom: 16 }}>
-              <Briefcase style={{ width: 24, height: 24, color: "rgba(255,255,255,0.25)" }} />
+            <div style={{ display: "inline-flex", padding: 18, borderRadius: "50%", background: "rgba(28,56,41,0.06)", border: `1px solid ${BORDER}`, marginBottom: 16 }}>
+              <Briefcase style={{ width: 24, height: 24, color: MUTED }} />
             </div>
-            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", marginBottom: 16 }}>No jobs yet. Create your first one.</p>
-            <Link href="/jobs/new">
-              <Button size="sm" style={{ background: "linear-gradient(135deg, #7C3AED, #6D28D9)", border: "1px solid rgba(124,58,237,0.5)" }}>
-                <Plus className="mr-2 h-4 w-4" /> Create Job
-              </Button>
+            <p style={{ fontSize: 14, color: MUTED, marginBottom: 16 }}>No jobs yet. Create your first one.</p>
+            <Link href="/jobs/new" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: DARK, color: "#fff", padding: "10px 20px", borderRadius: 100, fontWeight: 600, fontSize: 14, textDecoration: "none" }}>
+              <Plus style={{ width: 14, height: 14 }} /> Create Job
             </Link>
           </div>
         ) : (
@@ -87,18 +97,17 @@ export default async function DashboardPage() {
                   style={{
                     display: "flex", alignItems: "center", justifyContent: "space-between",
                     padding: "14px 24px",
-                    borderBottom: idx < Math.min(allJobs.length, 8) - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
-                    transition: "background 0.15s",
+                    borderBottom: idx < Math.min(allJobs.length, 8) - 1 ? `1px solid ${BORDER}` : "none",
                   }}
-                  className="hover:bg-white/[0.025] group"
+                  className="hover:bg-green-50/60 group transition-colors"
                 >
                   <div>
-                    <p style={{ fontSize: 14, fontWeight: 600, color: "#fff" }} className="group-hover:text-violet-300 transition-colors">{job.title}</p>
-                    <p style={{ fontSize: 12, color: "rgba(255,255,255,0.28)", marginTop: 2 }}>{formatDate(job.created_at)}</p>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: DARK }} className="group-hover:text-green-700 transition-colors">{job.title}</p>
+                    <p style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{formatDate(job.created_at)}</p>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <StatusBadge status={job.status} />
-                    <ArrowRight style={{ width: 14, height: 14, color: "rgba(255,255,255,0.2)" }} className="group-hover:text-white/50 transition-colors" />
+                    <ArrowRight style={{ width: 14, height: 14, color: "rgba(28,56,41,0.25)" }} className="group-hover:text-green-600 transition-colors" />
                   </div>
                 </div>
               </Link>
@@ -110,51 +119,41 @@ export default async function DashboardPage() {
   );
 }
 
-function StatCard({ label, value, accent, glow, glowClass, icon: Icon }: {
-  label: string; value: number; accent: string; glow: string; glowClass: string; icon: React.ElementType;
+function StatCard({ label, value, accent, glow, icon: Icon }: {
+  label: string; value: number; accent: string; glow: string; icon: React.ElementType;
 }) {
   return (
-    <div
-      className={`glass-card ${glowClass}`}
-      style={{ padding: "22px 20px", position: "relative", overflow: "hidden" }}
-    >
+    <div className={`glass-card ${glow}`} style={{ padding: "22px 20px", position: "relative", overflow: "hidden" }}>
       {/* Top accent line */}
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${accent}, transparent)` }} />
-      {/* Corner ambient glow */}
-      <div style={{ position: "absolute", top: -24, right: -24, width: 80, height: 80, background: glow, borderRadius: "50%", filter: "blur(24px)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${accent}, transparent)`, borderRadius: "16px 16px 0 0" }} />
 
       {/* Icon */}
       <div style={{
         width: 42, height: 42, borderRadius: 11, marginBottom: 16,
-        background: `linear-gradient(135deg, ${accent}28, ${accent}10)`,
-        border: `1px solid ${accent}28`,
+        background: `${accent}18`,
+        border: `1px solid ${accent}25`,
         display: "flex", alignItems: "center", justifyContent: "center",
       }}>
         <Icon style={{ width: 18, height: 18, color: accent }} />
       </div>
 
       {/* Value */}
-      <p style={{
-        fontSize: 38, fontWeight: 800, letterSpacing: "-2px", lineHeight: 1,
-        background: `linear-gradient(135deg, #ffffff 30%, ${accent})`,
-        WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-        marginBottom: 6,
-      }}>
+      <p style={{ fontSize: 40, fontWeight: 800, letterSpacing: "-2px", lineHeight: 1, color: "#1C3829", marginBottom: 6 }}>
         {value}
       </p>
 
       {/* Label */}
-      <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", fontWeight: 500 }}>{label}</p>
+      <p style={{ fontSize: 12, color: "#7A9E8E", fontWeight: 500 }}>{label}</p>
     </div>
   );
 }
 
 function StatusBadge({ status }: { status: string }) {
   const cfg: Record<string, { bg: string; color: string; border: string }> = {
-    draft:  { bg: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.4)",  border: "rgba(255,255,255,0.1)"  },
-    active: { bg: "rgba(16,185,129,0.12)",  color: "#34D399",                border: "rgba(16,185,129,0.25)"  },
-    paused: { bg: "rgba(245,158,11,0.12)",  color: "#FBBF24",                border: "rgba(245,158,11,0.25)"  },
-    closed: { bg: "rgba(239,68,68,0.12)",   color: "#F87171",                border: "rgba(239,68,68,0.25)"   },
+    draft:  { bg: "rgba(28,56,41,0.06)",  color: "#3D6B54",  border: "rgba(28,56,41,0.12)"  },
+    active: { bg: "rgba(16,185,129,0.1)", color: "#059669",  border: "rgba(16,185,129,0.2)" },
+    paused: { bg: "rgba(245,158,11,0.1)", color: "#D97706",  border: "rgba(245,158,11,0.2)" },
+    closed: { bg: "rgba(239,68,68,0.08)", color: "#DC2626",  border: "rgba(239,68,68,0.15)" },
   };
   const c = cfg[status] ?? cfg.draft;
   return (

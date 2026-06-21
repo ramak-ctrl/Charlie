@@ -1,19 +1,27 @@
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { DEFAULT_SCREENING_QUESTIONS } from "@/lib/utils";
 
 const CreateJobSchema = z.object({
-  title: z.string().min(1).max(200),
-  description: z.string().optional(),
-  company_intro: z.string().optional(),
-  key_skills: z.array(z.string()).default([]),
-  status: z.enum(["draft", "active"]).default("draft"),
+  title:          z.string().min(1).max(200),
+  job_type:       z.enum(["C2H", "FTE", "D2H"]).default("FTE"),
+  experience_min: z.number().int().min(0).max(30).optional(),
+  experience_max: z.number().int().min(0).max(30).optional(),
+  notice_period:  z.string().optional(),
+  positions:      z.number().int().min(1).max(999).default(1),
+  location:       z.string().optional(),
+  priority:       z.enum(["P0", "P1", "P2", "P3"]).default("P2"),
+  expiry_date:    z.string().optional(),
+  description:    z.string().optional(),
+  company_intro:  z.string().optional(),
+  key_skills:     z.array(z.string()).default([]),
+  status:         z.enum(["draft", "active"]).default("draft"),
   screening_questions: z.array(z.object({
-    question: z.string().min(1),
+    question:      z.string().min(1),
     question_type: z.enum(["open", "numeric", "boolean", "scale"]),
-    order_index: z.number().int(),
-    is_default: z.boolean().default(false),
+    order_index:   z.number().int(),
+    is_default:    z.boolean().default(false),
   })).optional(),
 });
 

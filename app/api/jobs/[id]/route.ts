@@ -3,17 +3,25 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 const UpdateJobSchema = z.object({
-  title: z.string().min(1).max(200).optional(),
-  description: z.string().optional(),
-  company_intro: z.string().optional(),
-  key_skills: z.array(z.string()).optional(),
-  status: z.enum(["draft", "active", "paused", "closed"]).optional(),
+  title:          z.string().min(1).max(200).optional(),
+  job_type:       z.enum(["C2H", "FTE", "D2H"]).optional(),
+  experience_min: z.number().int().min(0).max(30).optional().nullable(),
+  experience_max: z.number().int().min(0).max(30).optional().nullable(),
+  notice_period:  z.string().optional().nullable(),
+  positions:      z.number().int().min(1).max(999).optional(),
+  location:       z.string().optional().nullable(),
+  priority:       z.enum(["P0", "P1", "P2", "P3"]).optional(),
+  expiry_date:    z.string().optional().nullable(),
+  description:    z.string().optional().nullable(),
+  company_intro:  z.string().optional().nullable(),
+  key_skills:     z.array(z.string()).optional(),
+  status:         z.enum(["draft", "active", "paused", "closed"]).optional(),
   screening_questions: z.array(z.object({
-    id: z.string().uuid().optional(),
-    question: z.string().min(1),
+    id:            z.string().uuid().optional(),
+    question:      z.string().min(1),
     question_type: z.enum(["open", "numeric", "boolean", "scale"]),
-    order_index: z.number().int(),
-    is_default: z.boolean().default(false),
+    order_index:   z.number().int(),
+    is_default:    z.boolean().default(false),
   })).optional(),
 });
 

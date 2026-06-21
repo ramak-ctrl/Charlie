@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Briefcase, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import JobsListClient from "@/components/recruiter/JobsListClient";
 
 type Job = {
@@ -13,12 +12,8 @@ type Job = {
   candidates: { count: number }[];
 };
 
-const STATUS_TILES = [
-  { key: "draft",  label: "Draft",  color: "text-muted-foreground", bg: "bg-muted/60 border-border/60" },
-  { key: "active", label: "Active", color: "text-emerald-400",       bg: "bg-emerald-500/10 border-emerald-500/20" },
-  { key: "paused", label: "Paused", color: "text-amber-400",         bg: "bg-amber-500/10 border-amber-500/20" },
-  { key: "closed", label: "Closed", color: "text-rose-400",          bg: "bg-rose-500/10 border-rose-500/20" },
-];
+const DARK  = "#1C3829";
+const MUTED = "#7A9E8E";
 
 export default async function JobsPage() {
   const supabase = await createClient();
@@ -32,54 +27,41 @@ export default async function JobsPage() {
 
   const allJobs: Job[] = (jobs as Job[]) ?? [];
 
-  const counts = STATUS_TILES.reduce((acc, s) => {
-    acc[s.key] = allJobs.filter((j) => j.status === s.key).length;
-    return acc;
-  }, {} as Record<string, number>);
-
   return (
-    <div className="p-8 max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+    <div style={{ padding: "28px 32px" }}>
+
+      {/* ── Page header ── */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Jobs</h1>
-          <p className="text-muted-foreground mt-1 text-sm">{allJobs.length} job{allJobs.length !== 1 ? "s" : ""} total</p>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
+            <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.8px", color: DARK, lineHeight: 1 }}>
+              Active Job Listings
+            </h1>
+            <span style={{
+              background: "rgba(28,56,41,0.08)", color: DARK,
+              fontSize: 11, fontWeight: 700, padding: "2px 8px",
+              borderRadius: 99, border: "1px solid rgba(28,56,41,0.14)",
+            }}>
+              {allJobs.length}
+            </span>
+          </div>
+          <p style={{ fontSize: 13, color: MUTED }}>Manage, review, and track all open positions in one place.</p>
         </div>
-        <Link href="/jobs/new">
-          <Button aria-label="Create new job">
-            <Plus className="mr-2 h-4 w-4" />
-            New Job
-          </Button>
+        <Link href="/jobs/new" style={{
+          display: "inline-flex", alignItems: "center", gap: 8,
+          background: DARK, color: "#fff",
+          padding: "10px 20px", borderRadius: 100,
+          fontWeight: 600, fontSize: 13, textDecoration: "none",
+          boxShadow: "0 4px 16px rgba(28,56,41,0.25)",
+          flexShrink: 0,
+        }}>
+          <Plus style={{ width: 14, height: 14 }} />
+          New Job
         </Link>
       </div>
 
-      {/* Status tiles */}
-      <div className="grid grid-cols-4 gap-3 mb-6">
-        {STATUS_TILES.map((s) => (
-          <div key={s.key} className={`glass-card px-4 py-3 border ${s.bg}`}>
-            <p className={`text-2xl font-bold ${s.color}`}>{counts[s.key]}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* List */}
-      {allJobs.length === 0 ? (
-        <div className="glass-card py-16 text-center">
-          <div className="inline-flex p-4 rounded-full bg-muted mb-4">
-            <Briefcase className="h-6 w-6 text-muted-foreground" />
-          </div>
-          <p className="text-muted-foreground mb-4 text-sm">No jobs yet. Create your first one.</p>
-          <Link href="/jobs/new">
-            <Button size="sm">
-              <Plus className="mr-2 h-4 w-4" />
-              Create Job
-            </Button>
-          </Link>
-        </div>
-      ) : (
-        <JobsListClient jobs={allJobs} />
-      )}
+      {/* ── Interactive tiles + table ── */}
+      <JobsListClient jobs={allJobs} />
     </div>
   );
 }

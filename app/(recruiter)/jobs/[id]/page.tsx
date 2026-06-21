@@ -57,7 +57,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
   const candidateList = (candidates as CandidateRow[]) ?? [];
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-6">
+    <div style={{ padding: "28px 32px" }} className="space-y-6">
 
       {/* ── Header ── */}
       <div className="flex items-start justify-between">
@@ -91,7 +91,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
               <BookOpen className="h-4 w-4 text-primary" />
               <h3 className="text-sm font-semibold text-foreground">Job Description</h3>
             </div>
-            <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">{job.description}</p>
+            <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">{job.description}</p>
           </div>
         ) : null}
 
@@ -105,7 +105,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
               <h3 className="text-sm font-semibold text-foreground">Company Introduction</h3>
               <span className="text-xs text-muted-foreground/60 italic">— read aloud by Charlie at interview start</span>
             </div>
-            <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">{job.company_intro}</p>
+            <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">{job.company_intro}</p>
           </div>
         ) : null}
 
@@ -153,7 +153,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
                   <li key={q.id} className="flex gap-2.5">
                     <span className="text-muted-foreground/40 font-mono text-xs shrink-0 tabular-nums mt-0.5">{i + 1}.</span>
                     <div>
-                      <p className="text-sm text-slate-300 leading-relaxed">{q.question}</p>
+                      <p className="text-sm text-foreground/80 leading-relaxed">{q.question}</p>
                       <span className="text-xs text-muted-foreground/50 mt-0.5 inline-block capitalize">{q.question_type}</span>
                     </div>
                   </li>
@@ -191,9 +191,9 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
     draft:  "bg-muted text-muted-foreground border-border",
-    active: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-    paused: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-    closed: "bg-rose-500/10 text-rose-400 border-rose-500/20",
+    active: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20",
+    paused: "bg-amber-500/10 text-amber-700 border-amber-500/20",
+    closed: "bg-rose-500/10 text-rose-600 border-rose-500/20",
   };
   return (
     <span className={`text-xs font-medium px-2.5 py-1 rounded-full border ${styles[status] ?? styles.draft}`}>
