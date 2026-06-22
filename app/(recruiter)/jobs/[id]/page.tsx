@@ -3,12 +3,15 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Pencil, CalendarDays, Users, BookOpen, Building2, ListChecks } from "lucide-react";
+import { Pencil, CalendarDays, Users, BookOpen, Building2, ListChecks, Trophy } from "lucide-react";
 import CandidateTable from "@/components/recruiter/CandidateTable";
 import SendInviteModal from "@/components/recruiter/SendInviteModal";
 import { formatDate } from "@/lib/utils";
 
 type ScreeningQuestion = { id: string; question: string; question_type: string; order_index: number };
+
+type CriterionResult = { criterion: string; status: "met" | "unmet" | "unconfirmed"; evidence: string | null };
+
 type CandidateRow = {
   id: string;
   name: string;
@@ -21,9 +24,36 @@ type CandidateRow = {
     status: string;
     duration_secs: number | null;
     completed_at: string | null;
-    evaluations: { overall_score: number; recommendation: string } | null;
+    evaluations: {
+      overall_score: number;
+      recommendation: string;
+      communication_score: number;
+      criteria_results: CriterionResult[] | null;
+    } | null;
   }[];
 };
+
+function computeRanks(candidates: CandidateRow[]): Record<string, number> {
+  const evaluated = candidates.filter(c => c.interviews?.[0]?.evaluations != null);
+  if (evaluated.length < 2) return {};
+
+  const sorted = [...evaluated].sort((a, b) => {
+    const aEv = a.interviews[0].evaluations!;
+    const bEv = b.interviews[0].evaluations!;
+
+    const aMet = (aEv.criteria_results ?? []).filter(r => r.status === "met").length;
+    const bMet = (bEv.criteria_results ?? []).filter(r => r.status === "met").length;
+    if (bMet !== aMet) return bMet - aMet;
+
+    if (bEv.overall_score !== aEv.overall_score) return bEv.overall_score - aEv.overall_score;
+
+    return (bEv.communication_score ?? 0) - (aEv.communication_score ?? 0);
+  });
+
+  const ranks: Record<string, number> = {};
+  sorted.forEach((c, i) => { ranks[c.id] = i + 1; });
+  return ranks;
+}
 
 export default async function JobDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -45,7 +75,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
       *,
       interview_tokens(token, expires_at, used_at),
       interviews(id, status, duration_secs, completed_at,
-        evaluations(overall_score, recommendation)
+        evaluations(overall_score, recommendation, communication_score, criteria_results)
       )
     `)
     .eq("job_id", id)
@@ -55,6 +85,12 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
   const questions = ((job.screening_questions as ScreeningQuestion[]) ?? [])
     .sort((a, b) => a.order_index - b.order_index);
   const candidateList = (candidates as CandidateRow[]) ?? [];
+
+  const candidateRanks = computeRanks(candidateList);
+  const rankedCount = Object.keys(candidateRanks).length;
+  const topCandidate = rankedCount > 0
+    ? candidateList.find(c => candidateRanks[c.id] === 1)
+    : null;
 
   return (
     <div style={{ padding: "28px 32px" }} className="space-y-6">
@@ -84,7 +120,6 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
 
       {/* ── Job Details card ── */}
       <div className="glass-card p-6 space-y-5">
-        {/* Description */}
         {job.description ? (
           <div>
             <div className="flex items-center gap-2 mb-2">
@@ -97,7 +132,6 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
 
         {job.description && job.company_intro ? <Separator /> : null}
 
-        {/* Company Intro */}
         {job.company_intro ? (
           <div>
             <div className="flex items-center gap-2 mb-2">
@@ -122,6 +156,21 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
 
         {/* Left sidebar */}
         <div className="col-span-1 space-y-4">
+
+          {/* Role Fit Criteria */}
+          {(job.role_criteria as string[])?.length > 0 && (
+            <div className="glass-card p-5">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Role Fit Criteria</h3>
+              <ol className="space-y-2">
+                {(job.role_criteria as string[]).map((c, i) => (
+                  <li key={i} className="flex gap-2.5 text-sm text-foreground/80">
+                    <span className="text-muted-foreground/40 font-mono text-xs shrink-0 tabular-nums mt-0.5">{i + 1}.</span>
+                    {c}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
 
           {/* Key Skills */}
           <div className="glass-card p-5">
@@ -168,17 +217,40 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
         {/* Candidates table */}
         <div className="col-span-2">
           <div className="glass-card overflow-hidden">
-            <div className="px-6 py-4 border-b border-border/60 flex items-center gap-2">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <h3 className="text-sm font-semibold text-foreground">
-                Candidates <span className="text-muted-foreground font-normal">({candidateList.length})</span>
-              </h3>
+            <div className="px-6 py-4 border-b border-border/60">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold text-foreground">
+                    Candidates <span className="text-muted-foreground font-normal">({candidateList.length})</span>
+                  </h3>
+                  {rankedCount >= 2 && (
+                    <span style={{
+                      fontSize: 11, fontWeight: 600,
+                      background: "rgba(184,224,74,0.15)", color: "#3D6B54",
+                      border: "1px solid rgba(184,224,74,0.35)",
+                      borderRadius: 99, padding: "2px 10px",
+                    }}>
+                      {rankedCount} ranked
+                    </span>
+                  )}
+                </div>
+                {topCandidate && rankedCount >= 2 && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <Trophy style={{ width: 13, height: 13, color: "#B45309" }} />
+                    <span style={{ fontSize: 12, color: "#B45309", fontWeight: 600 }}>
+                      Top pick: {topCandidate.name}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="p-2">
               <CandidateTable
                 candidates={candidateList}
                 jobId={id}
                 appUrl={appUrl}
+                candidateRanks={candidateRanks}
               />
             </div>
           </div>
