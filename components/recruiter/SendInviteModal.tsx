@@ -25,7 +25,7 @@ export default function SendInviteModal({ jobId, jobTitle }: Props) {
   const [open, setOpen] = useState(false);
   const [candidates, setCandidates] = useState<CandidateRow[]>([{ name: "", email: "", phone: "" }]);
   const [sending, setSending] = useState(false);
-  const [results, setResults] = useState<{ email: string; success: boolean; error?: string; interviewLink?: string; emailSent?: boolean }[] | null>(null);
+  const [results, setResults] = useState<{ email: string; success: boolean; error?: string; interviewLink?: string; emailSent?: boolean; emailError?: string }[] | null>(null);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -126,7 +126,10 @@ export default function SendInviteModal({ jobId, jobTitle }: Props) {
                     {r.success && r.interviewLink && (
                       <div className="mt-1">
                         {!r.emailSent && (
-                          <p className="text-xs text-amber-400 mb-1.5">Email could not be sent — share this link manually:</p>
+                          <p className="text-xs text-amber-400 mb-1.5">
+                            Email could not be sent — share this link manually:
+                            {r.emailError && <span className="block text-amber-300/70 mt-0.5 font-mono">{r.emailError}</span>}
+                          </p>
                         )}
                         <div className="flex items-center gap-2">
                           <input

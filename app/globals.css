@@ -79,3 +79,109 @@
   100% { transform: scale(1.6); opacity: 0; }
 }
 .animate-pulse-ring { animation: pulse-ring 1.8s ease-out infinite; }
+
+/* ── Landing page animations ──────────────────────────────── */
+@keyframes orb-drift-1 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33%     { transform: translate(40px,-30px) scale(1.08); }
+  66%     { transform: translate(-25px,35px) scale(0.94); }
+}
+@keyframes orb-drift-2 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33%     { transform: translate(-35px,28px) scale(1.05); }
+  66%     { transform: translate(30px,-20px) scale(0.96); }
+}
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@keyframes hero-fade-in {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes badge-glow {
+  0%,100% { box-shadow: 0 0 0 0 rgba(184,224,74,0); }
+  50%     { box-shadow: 0 0 20px 4px rgba(184,224,74,0.18); }
+}
+@keyframes scroll-dot {
+  0%,100% { opacity: 1; transform: translateY(0); }
+  50%     { opacity: 0; transform: translateY(8px); }
+}
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Scroll-reveal base */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s cubic-bezier(0.16,1,0.3,1),
+              transform 0.7s cubic-bezier(0.16,1,0.3,1);
+}
+[data-reveal].is-visible { opacity: 1; transform: translateY(0); }
+[data-reveal][data-delay="100"] { transition-delay: 100ms; }
+[data-reveal][data-delay="150"] { transition-delay: 150ms; }
+[data-reveal][data-delay="200"] { transition-delay: 200ms; }
+[data-reveal][data-delay="300"] { transition-delay: 300ms; }
+[data-reveal][data-delay="400"] { transition-delay: 400ms; }
+[data-reveal][data-delay="500"] { transition-delay: 500ms; }
+[data-reveal][data-delay="600"] { transition-delay: 600ms; }
+
+/* Glass nav on scroll */
+.landing-nav { transition: background 0.3s ease, backdrop-filter 0.3s ease, border-color 0.3s ease; }
+.landing-nav.scrolled {
+  background: rgba(7,14,9,0.85) !important;
+  backdrop-filter: blur(16px);
+  border-bottom-color: rgba(255,255,255,0.08) !important;
+}
+
+/* Bento card hover */
+.bento-card {
+  transition: transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.bento-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(184,224,74,0.2) !important;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.35) !important;
+}
+
+/* Score bar fill animation */
+@keyframes bar-fill {
+  from { width: 0; }
+}
+.score-bar { animation: bar-fill 1s cubic-bezier(0.16,1,0.3,1) both; }
+
+/* Spin (for loaders) */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Dashboard hover utilities (used in server components — no JS handlers) */
+.dash-action-card {
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+}
+.dash-action-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(28,56,41,0.12) !important;
+}
+.dash-new-job-btn {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.dash-new-job-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(28,56,41,0.28) !important;
+}
+.dash-job-row { transition: background 0.13s; }
+.dash-job-row:hover { background: rgba(28,56,41,0.03) !important; }
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #ffffff 0%, #B8E04A 50%, #7AE8A0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

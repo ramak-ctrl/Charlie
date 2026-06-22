@@ -32,7 +32,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const serviceClient = await createServiceClient();
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const results: { email: string; success: boolean; error?: string; interviewLink?: string; emailSent?: boolean }[] = [];
+  const results: { email: string; success: boolean; error?: string; interviewLink?: string; emailSent?: boolean; emailError?: string }[] = [];
 
   for (const c of parsed.data.candidates) {
     try {
@@ -61,7 +61,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       const interviewLink = `${appUrl}/interview/${token.token}`;
 
       let emailSent = false;
-      if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+      let emailError: string | undefined;
+      const hasEmail = !!(process.env.RESEND_API_KEY ||
+        (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS));
+
+      if (hasEmail) {
         const fromEmail = process.env.SMTP_FROM ?? user.email ?? "rama.k@mechispike.com";
         try {
           await sendInterviewInvite({
@@ -74,13 +78,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           });
           emailSent = true;
         } catch (emailErr) {
+          emailError = String(emailErr);
           console.error("[invite] email failed:", emailErr);
         }
       } else {
-        console.log("[invite] SMTP not configured — skipping email for", c.email);
+        emailError = "No email provider configured (set RESEND_API_KEY or SMTP_* vars)";
+        console.log("[invite] no email provider — skipping for", c.email);
       }
 
-      results.push({ email: c.email, success: true, interviewLink, emailSent });
+      results.push({ email: c.email, success: true, interviewLink, emailSent, emailError });
     } catch (err) {
       results.push({ email: c.email, success: false, error: String(err) });
     }

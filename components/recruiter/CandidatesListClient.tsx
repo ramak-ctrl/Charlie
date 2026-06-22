@@ -1,24 +1,27 @@
 "use client";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Users, UserCheck, Clock, CheckCircle2, Star,
-  Search, Trash2, ArrowRight, ExternalLink,
+  Search, Trash2, ArrowRight, ExternalLink, FileText,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import EvaluationReport from "@/components/recruiter/EvaluationReport";
 import type { CandidateRow } from "@/app/(recruiter)/candidates/page";
 
 const DARK   = "#1C3829";
 const MID    = "#3D6B54";
 const MUTED  = "#7A9E8E";
+const LIME   = "#B8E04A";
 const BORDER = "rgba(28,56,41,0.09)";
 
 const STATUS_CONFIG = [
-  { key: "all",       label: "ALL",         accent: "#6366F1", icon: Users      },
-  { key: "invited",   label: "INVITED",     accent: "#3B82F6", icon: UserCheck  },
-  { key: "started",   label: "IN PROGRESS", accent: "#D97706", icon: Clock      },
-  { key: "completed", label: "COMPLETED",   accent: "#059669", icon: CheckCircle2},
-  { key: "reviewed",  label: "REVIEWED",    accent: "#8B5CF6", icon: Star       },
+  { key: "all",       label: "ALL",         accent: "#6366F1", icon: Users       },
+  { key: "invited",   label: "INVITED",     accent: "#3B82F6", icon: UserCheck   },
+  { key: "started",   label: "IN PROGRESS", accent: "#D97706", icon: Clock       },
+  { key: "completed", label: "COMPLETED",   accent: "#059669", icon: CheckCircle2 },
+  { key: "reviewed",  label: "REVIEWED",    accent: "#8B5CF6", icon: Star        },
 ];
 
 const STATUS_STYLE: Record<string, { color: string; bg: string; border: string }> = {
@@ -28,25 +31,35 @@ const STATUS_STYLE: Record<string, { color: string; bg: string; border: string }
   reviewed:  { color: "#8B5CF6", bg: "rgba(139,92,246,0.1)",  border: "rgba(139,92,246,0.2)"  },
 };
 
-const RECO_STYLE: Record<string, { label: string; color: string }> = {
-  strong_yes: { label: "Strong Yes", color: "#059669" },
-  yes:        { label: "Yes",        color: "#10B981" },
-  maybe:      { label: "Maybe",      color: "#D97706" },
-  no:         { label: "No",         color: "#DC2626" },
+const RANK_STYLE: Record<number, { bg: string; color: string; border: string; label: string }> = {
+  1: { bg: "rgba(217,119,6,0.12)",  color: "#92400E", border: "rgba(217,119,6,0.28)",  label: "1st" },
+  2: { bg: "rgba(28,56,41,0.08)",   color: "#1C3829", border: "rgba(28,56,41,0.2)",    label: "2nd" },
+  3: { bg: "rgba(99,102,241,0.1)",  color: "#4338CA", border: "rgba(99,102,241,0.22)", label: "3rd" },
 };
 
+function getRank(rank: number) {
+  return RANK_STYLE[rank] ?? { bg: "rgba(28,56,41,0.04)", color: MUTED, border: BORDER, label: `${rank}th` };
+}
+
 const TH: React.CSSProperties = {
-  padding: "12px 14px",
+  padding: "11px 14px",
   fontSize: 10, fontWeight: 700,
   color: "rgba(255,255,255,0.50)",
   letterSpacing: "0.1em", textAlign: "left",
+  whiteSpace: "nowrap",
 };
 
-export default function CandidatesListClient({ candidates }: { candidates: CandidateRow[] }) {
+interface Props {
+  candidates: CandidateRow[];
+  candidateRanks: Record<string, number>;
+}
+
+export default function CandidatesListClient({ candidates, candidateRanks }: Props) {
   const router = useRouter();
   const [activeFilter, setActiveFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [reportInterviewId, setReportInterviewId] = useState<string | null>(null);
 
   const counts: Record<string, number> = {
     all:       candidates.length,
@@ -87,27 +100,17 @@ export default function CandidatesListClient({ candidates }: { candidates: Candi
             const Icon = cfg.icon;
             const isActive = activeFilter === cfg.key;
             return (
-              <button
-                key={cfg.key}
-                onClick={() => setActiveFilter(cfg.key)}
-                style={{
-                  flexShrink: 0, minWidth: 108, background: "#fff",
-                  border: isActive ? `2px solid ${cfg.accent}` : "2px solid rgba(28,56,41,0.07)",
-                  borderRadius: 10, padding: "14px 14px 12px",
-                  cursor: "pointer", position: "relative", overflow: "hidden",
-                  textAlign: "left", outline: "none", transition: "all 0.17s ease",
-                  boxShadow: isActive
-                    ? `0 0 0 1px ${cfg.accent}20, 0 6px 20px ${cfg.accent}18`
-                    : "0 1px 6px rgba(28,56,41,0.06)",
-                }}
-              >
+              <button key={cfg.key} onClick={() => setActiveFilter(cfg.key)} style={{
+                flexShrink: 0, minWidth: 108, background: "#fff",
+                border: isActive ? `2px solid ${cfg.accent}` : "2px solid rgba(28,56,41,0.07)",
+                borderRadius: 10, padding: "14px 14px 12px",
+                cursor: "pointer", position: "relative", overflow: "hidden",
+                textAlign: "left", outline: "none", transition: "all 0.17s ease",
+                boxShadow: isActive ? `0 0 0 1px ${cfg.accent}20, 0 6px 20px ${cfg.accent}18` : "0 1px 6px rgba(28,56,41,0.06)",
+              }}>
                 <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, background: cfg.accent, borderRadius: "8px 8px 0 0" }} />
-                <div style={{ marginBottom: 10, marginTop: 4 }}>
-                  <Icon style={{ width: 15, height: 15, color: cfg.accent }} />
-                </div>
-                <p style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-1.5px", lineHeight: 1, color: DARK, marginBottom: 5 }}>
-                  {counts[cfg.key] ?? 0}
-                </p>
+                <div style={{ marginBottom: 10, marginTop: 4 }}><Icon style={{ width: 15, height: 15, color: cfg.accent }} /></div>
+                <p style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-1.5px", lineHeight: 1, color: DARK, marginBottom: 5 }}>{counts[cfg.key] ?? 0}</p>
                 <p style={{ fontSize: 10, fontWeight: 700, color: MUTED, letterSpacing: "0.08em" }}>{cfg.label}</p>
               </button>
             );
@@ -116,21 +119,14 @@ export default function CandidatesListClient({ candidates }: { candidates: Candi
       </div>
 
       {/* ── SEARCH ── */}
-      <div style={{
-        display: "flex", alignItems: "center", gap: 10,
-        background: "#fff", border: `1px solid ${BORDER}`, borderRadius: 10,
-        padding: "0 14px", marginBottom: 16,
-        boxShadow: "0 1px 4px rgba(28,56,41,0.05)",
-      }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#fff", border: `1px solid ${BORDER}`, borderRadius: 10, padding: "0 14px", marginBottom: 16, boxShadow: "0 1px 4px rgba(28,56,41,0.05)" }}>
         <Search style={{ width: 15, height: 15, color: MUTED, flexShrink: 0 }} />
         <input
           type="text" placeholder="Search by name, email, or job..."
           value={search} onChange={e => setSearch(e.target.value)}
           style={{ flex: 1, padding: "12px 0", background: "none", border: "none", outline: "none", fontSize: 13, color: DARK }}
         />
-        {search && (
-          <button onClick={() => setSearch("")} style={{ background: "none", border: "none", color: MUTED, cursor: "pointer", padding: "4px 2px", fontSize: 13 }}>✕</button>
-        )}
+        {search && <button onClick={() => setSearch("")} style={{ background: "none", border: "none", color: MUTED, cursor: "pointer", padding: "4px 2px", fontSize: 13 }}>✕</button>}
       </div>
 
       {/* ── TABLE ── */}
@@ -149,80 +145,80 @@ export default function CandidatesListClient({ candidates }: { candidates: Candi
             <table style={{ width: "100%", borderCollapse: "collapse" }} role="table" aria-label="Candidates">
               <thead>
                 <tr style={{ background: "#172F22" }}>
-                  <th style={{ ...TH, width: 48, textAlign: "center" }}>#</th>
+                  <th style={{ ...TH, width: 60 }}>RANK</th>
                   <th style={TH}>CANDIDATE</th>
                   <th style={TH}>JOB</th>
                   <th style={TH}>STATUS</th>
                   <th style={TH}>SCORE</th>
-                  <th style={TH}>RECOMMENDATION</th>
-                  <th style={TH}>PHONE</th>
-                  <th style={TH}>NOTICE PERIOD</th>
+                  <th style={TH}>ROLE FIT</th>
+                  <th style={TH}>PROBE</th>
+                  <th style={TH}>NOTICE</th>
                   <th style={TH}>LOCATION</th>
                   <th style={TH}>ADDED</th>
-                  <th style={{ ...TH, width: 72 }} />
+                  <th style={{ ...TH, textAlign: "right", width: 100 }}>ACTIONS</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((c, idx) => {
-                  const st = STATUS_STYLE[c.status] ?? STATUS_STYLE.invited;
-                  const accentColor = STATUS_CONFIG.find(cfg => cfg.key === c.status)?.accent ?? "#3B82F6";
-                  const latestInterview = c.interviews?.[0];
-                  const evaluation = latestInterview?.evaluations;
-                  const reco = evaluation?.recommendation ? RECO_STYLE[evaluation.recommendation] : null;
+                  const st           = STATUS_STYLE[c.status] ?? STATUS_STYLE.invited;
+                  const accentColor  = STATUS_CONFIG.find(cfg => cfg.key === c.status)?.accent ?? "#3B82F6";
+                  const interview    = c.interviews?.[0];
+                  const evaluation   = interview?.evaluations ?? null;
+                  const rank         = candidateRanks[c.id];
+                  const rs           = rank != null ? getRank(rank) : null;
+                  const isTopPick    = rank === 1;
+
+                  const criteriaResults = evaluation?.criteria_results ?? [];
+                  const metCount     = criteriaResults.filter(r => r.status === "met").length;
+                  const totalCount   = criteriaResults.length;
+                  const probeCriteria = criteriaResults.filter(r => r.status === "unconfirmed").map(r => r.criterion);
 
                   return (
-                    <tr
-                      key={c.id}
+                    <tr key={c.id}
                       style={{
                         borderBottom: idx < filtered.length - 1 ? `1px solid ${BORDER}` : "none",
                         cursor: "pointer", transition: "background 0.13s",
+                        background: isTopPick && rank != null ? "rgba(217,119,6,0.02)" : "transparent",
                       }}
                       className="hover:bg-emerald-50/40 group"
-                      onClick={() => c.jobs && router.push(`/jobs/${c.jobs.id}`)}
-                    >
-                      {/* # */}
-                      <td style={{ padding: "14px 8px", textAlign: "center", position: "relative" }}>
+                      onClick={() => c.jobs && router.push(`/jobs/${c.jobs.id}`)}>
+
+                      {/* Rank */}
+                      <td style={{ padding: "13px 8px 13px 14px", position: "relative" }}>
                         <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: accentColor, borderRadius: "0 2px 2px 0" }} />
-                        <span style={{ fontSize: 12, color: MUTED, fontWeight: 500 }}>{idx + 1}</span>
+                        {rs ? (
+                          <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 34, height: 22, borderRadius: 99, background: rs.bg, color: rs.color, border: `1px solid ${rs.border}`, fontSize: 10, fontWeight: 800 }}>
+                            {rs.label}
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: 11, color: "rgba(28,56,41,0.2)" }}>—</span>
+                        )}
                       </td>
 
                       {/* Candidate */}
-                      <td style={{ padding: "14px 14px" }}>
-                        <p style={{ fontSize: 13, fontWeight: 700, color: DARK }} className="group-hover:text-emerald-700 transition-colors">
-                          {c.name}
-                        </p>
+                      <td style={{ padding: "13px 14px" }}>
+                        <p style={{ fontSize: 13, fontWeight: 700, color: DARK }} className="group-hover:text-emerald-700 transition-colors">{c.name}</p>
                         <p style={{ fontSize: 11, color: MUTED, marginTop: 1 }}>{c.email}</p>
                       </td>
 
                       {/* Job */}
-                      <td style={{ padding: "14px 14px" }}>
-                        <span style={{
-                          fontSize: 12, fontWeight: 500, color: MID,
-                          maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis",
-                          whiteSpace: "nowrap", display: "block",
-                        }}>
+                      <td style={{ padding: "13px 14px" }}>
+                        <span style={{ fontSize: 12, fontWeight: 500, color: MID, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
                           {c.jobs?.title ?? "—"}
                         </span>
                       </td>
 
                       {/* Status */}
-                      <td style={{ padding: "14px 14px" }}>
-                        <span style={{
-                          fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 99,
-                          background: st.bg, color: st.color, border: `1px solid ${st.border}`,
-                          whiteSpace: "nowrap",
-                        }}>
+                      <td style={{ padding: "13px 14px" }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 99, background: st.bg, color: st.color, border: `1px solid ${st.border}`, whiteSpace: "nowrap" }}>
                           {c.status.charAt(0).toUpperCase() + c.status.slice(1)}
                         </span>
                       </td>
 
                       {/* Score */}
-                      <td style={{ padding: "14px 14px" }}>
+                      <td style={{ padding: "13px 14px" }}>
                         {evaluation?.overall_score != null ? (
-                          <span style={{
-                            fontSize: 13, fontWeight: 800, color: DARK,
-                            display: "inline-flex", alignItems: "baseline", gap: 2,
-                          }}>
+                          <span style={{ fontSize: 13, fontWeight: 800, color: DARK, display: "inline-flex", alignItems: "baseline", gap: 2 }}>
                             {Number(evaluation.overall_score).toFixed(1)}
                             <span style={{ fontSize: 10, fontWeight: 400, color: MUTED }}>/10</span>
                           </span>
@@ -231,62 +227,91 @@ export default function CandidatesListClient({ candidates }: { candidates: Candi
                         )}
                       </td>
 
-                      {/* Recommendation */}
-                      <td style={{ padding: "14px 14px" }}>
-                        {reco ? (
-                          <span style={{ fontSize: 12, fontWeight: 600, color: reco.color }}>{reco.label}</span>
+                      {/* Role Fit */}
+                      <td style={{ padding: "13px 14px" }}>
+                        {totalCount > 0 ? (
+                          <span style={{
+                            fontSize: 12, fontWeight: 700,
+                            color: metCount === totalCount ? "#059669" : metCount >= totalCount / 2 ? "#D97706" : "#DC2626",
+                          }}>
+                            {metCount}/{totalCount} criteria
+                          </span>
+                        ) : evaluation ? (
+                          <span style={{ fontSize: 11, color: MUTED }}>No criteria set</span>
                         ) : (
                           <span style={{ color: "rgba(28,56,41,0.2)", fontSize: 12 }}>—</span>
                         )}
                       </td>
 
-                      {/* Phone */}
-                      <td style={{ padding: "14px 14px", fontSize: 12, color: MID }}>
-                        {c.phone ?? <span style={{ color: "rgba(28,56,41,0.2)" }}>—</span>}
+                      {/* Probe */}
+                      <td style={{ padding: "13px 14px", maxWidth: 180 }}>
+                        {probeCriteria.length > 0 ? (
+                          <span style={{ fontSize: 11, color: "#D97706", fontWeight: 500 }} title={probeCriteria.join(", ")}>
+                            {probeCriteria[0]}{probeCriteria.length > 1 ? ` +${probeCriteria.length - 1}` : ""}
+                          </span>
+                        ) : evaluation ? (
+                          <span style={{ fontSize: 11, color: "#059669" }}>All confirmed</span>
+                        ) : (
+                          <span style={{ color: "rgba(28,56,41,0.2)", fontSize: 12 }}>—</span>
+                        )}
                       </td>
 
-                      {/* Notice Period */}
-                      <td style={{ padding: "14px 14px", fontSize: 12, color: MID, whiteSpace: "nowrap" }}>
+                      {/* Notice */}
+                      <td style={{ padding: "13px 14px", fontSize: 12, color: MID, whiteSpace: "nowrap" }}>
                         {c.notice_period ?? <span style={{ color: "rgba(28,56,41,0.2)" }}>—</span>}
                       </td>
 
                       {/* Location */}
-                      <td style={{ padding: "14px 14px", fontSize: 12, color: MID }}>
+                      <td style={{ padding: "13px 14px", fontSize: 12, color: MID }}>
                         {c.current_location ?? <span style={{ color: "rgba(28,56,41,0.2)" }}>—</span>}
                       </td>
 
                       {/* Added */}
-                      <td style={{ padding: "14px 14px", fontSize: 12, color: MUTED, whiteSpace: "nowrap" }}>
+                      <td style={{ padding: "13px 14px", fontSize: 12, color: MUTED, whiteSpace: "nowrap" }}>
                         {formatDate(c.created_at)}
                       </td>
 
                       {/* Actions */}
-                      <td style={{ padding: "14px 10px" }} onClick={e => e.stopPropagation()}>
+                      <td style={{ padding: "13px 10px" }} onClick={e => e.stopPropagation()}>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 2 }}>
-                          {c.linkedin_url && (
-                            <a
-                              href={c.linkedin_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={e => e.stopPropagation()}
-                              aria-label="LinkedIn"
-                              style={{ padding: 7, borderRadius: 7, color: MUTED, display: "flex" }}
-                              className="hover:bg-blue-50 hover:!text-blue-500 transition-colors"
+                          {/* Report button — only if evaluated */}
+                          {interview && evaluation && (
+                            <button
+                              onClick={e => { e.stopPropagation(); setReportInterviewId(interview.id); }}
+                              aria-label={`View report for ${c.name}`}
+                              title="View evaluation report"
+                              style={{
+                                display: "inline-flex", alignItems: "center", gap: 5,
+                                fontSize: 11, padding: "5px 10px", borderRadius: 8,
+                                background: "rgba(28,56,41,0.07)", color: MID,
+                                border: "1px solid rgba(28,56,41,0.12)",
+                                cursor: "pointer", fontWeight: 600,
+                              }}
+                              className="hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors"
                             >
-                              <ExternalLink style={{ width: 13, height: 13 }} />
+                              <FileText style={{ width: 11, height: 11 }} />
+                              Report
+                            </button>
+                          )}
+
+                          {c.linkedin_url && (
+                            <a href={c.linkedin_url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                              aria-label="LinkedIn"
+                              style={{ padding: 6, borderRadius: 7, color: MUTED, display: "flex" }}
+                              className="hover:bg-blue-50 hover:!text-blue-500 transition-colors">
+                              <ExternalLink style={{ width: 12, height: 12 }} />
                             </a>
                           )}
-                          <button
-                            onClick={(e) => handleDelete(e, c.id)}
-                            disabled={deleting === c.id}
+
+                          <button onClick={e => handleDelete(e, c.id)} disabled={deleting === c.id}
                             aria-label={`Delete ${c.name}`}
-                            style={{ padding: 7, borderRadius: 7, background: "none", border: "none", color: MUTED, cursor: "pointer", opacity: deleting === c.id ? 0.4 : 1 }}
-                            className="hover:bg-red-50 hover:!text-red-500 transition-colors"
-                          >
-                            <Trash2 style={{ width: 13, height: 13 }} />
+                            style={{ padding: 6, borderRadius: 7, background: "none", border: "none", color: MUTED, cursor: "pointer", opacity: deleting === c.id ? 0.4 : 1 }}
+                            className="hover:bg-red-50 hover:!text-red-500 transition-colors">
+                            <Trash2 style={{ width: 12, height: 12 }} />
                           </button>
-                          <div style={{ padding: 7, color: "rgba(28,56,41,0.2)" }} className="group-hover:!text-emerald-500 transition-colors">
-                            <ArrowRight style={{ width: 13, height: 13 }} />
+
+                          <div style={{ padding: 6, color: "rgba(28,56,41,0.2)" }} className="group-hover:!text-emerald-500 transition-colors">
+                            <ArrowRight style={{ width: 12, height: 12 }} />
                           </div>
                         </div>
                       </td>
@@ -298,10 +323,23 @@ export default function CandidatesListClient({ candidates }: { candidates: Candi
           </div>
 
           {/* Footer */}
-          <div style={{ padding: "10px 20px", borderTop: `1px solid ${BORDER}`, fontSize: 12, color: MUTED, background: "rgba(28,56,41,0.02)" }}>
-            Showing {filtered.length} of {candidates.length} candidate{candidates.length !== 1 ? "s" : ""}
+          <div style={{ padding: "10px 20px", borderTop: `1px solid ${BORDER}`, fontSize: 12, color: MUTED, background: "rgba(28,56,41,0.02)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span>Showing {filtered.length} of {candidates.length} candidate{candidates.length !== 1 ? "s" : ""}</span>
+            {Object.keys(candidateRanks).length >= 2 && (
+              <span style={{ fontSize: 11, color: MUTED, fontStyle: "italic" }}>
+                Ranked by criteria met → overall score → communication score (per job)
+              </span>
+            )}
           </div>
         </div>
+      )}
+
+      {/* Report modal */}
+      {reportInterviewId && (
+        <EvaluationReport
+          interviewId={reportInterviewId}
+          onClose={() => setReportInterviewId(null)}
+        />
       )}
     </div>
   );
