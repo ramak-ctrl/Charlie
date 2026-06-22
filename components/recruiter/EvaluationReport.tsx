@@ -4,10 +4,14 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from "@/components/ui/separator";
-import { recommendationColor, recommendationLabel, scoreColor, formatDuration } from "@/lib/utils";
-import { CheckCircle2, XCircle, AlertTriangle, MessageSquareQuote } from "lucide-react";
-import type { Evaluation, Interview, Candidate, Recommendation } from "@/lib/types";
+import { formatDuration } from "@/lib/utils";
+import { CheckCircle2, AlertTriangle, MessageSquareQuote } from "lucide-react";
+import type { Evaluation, Interview, Candidate } from "@/lib/types";
+
+const DARK   = "#1C3829";
+const MID    = "#3D6B54";
+const MUTED  = "#7A9E8E";
+const BORDER = "rgba(28,56,41,0.09)";
 
 interface Props {
   interviewId: string;
@@ -20,12 +24,33 @@ interface ReportData {
 }
 
 const AXES = [
-  { key: "communication_score", label: "Communication", desc: "Clarity, articulation, structure" },
-  { key: "seriousness_score", label: "Seriousness", desc: "Preparation, engagement, depth" },
-  { key: "composure_score", label: "Composure", desc: "Handling pressure and ambiguity" },
-  { key: "professionalism_score", label: "Professionalism", desc: "Tone, courtesy, conduct" },
-  { key: "reliability_score", label: "Reliability", desc: "Story consistency, specificity, self-eval gap" },
+  { key: "communication_score",   label: "Communication",   desc: "Clarity, articulation, structure"          },
+  { key: "seriousness_score",     label: "Seriousness",     desc: "Preparation, engagement, depth"            },
+  { key: "composure_score",       label: "Composure",       desc: "Handling pressure and ambiguity"           },
+  { key: "professionalism_score", label: "Professionalism", desc: "Tone, courtesy, conduct"                   },
+  { key: "reliability_score",     label: "Reliability",     desc: "Story consistency, specificity, self-eval gap" },
 ] as const;
+
+const RECO_CONFIG: Record<string, { label: string; bg: string; color: string; border: string; scoreBg: string }> = {
+  strong_yes: { label: "Strong Yes", bg: "rgba(5,150,105,0.08)",  color: "#059669", border: "rgba(5,150,105,0.25)",  scoreBg: "rgba(5,150,105,0.15)"  },
+  yes:        { label: "Yes",        bg: "rgba(59,130,246,0.08)", color: "#1D4ED8", border: "rgba(59,130,246,0.25)", scoreBg: "rgba(59,130,246,0.15)" },
+  maybe:      { label: "Maybe",      bg: "rgba(217,119,6,0.08)",  color: "#B45309", border: "rgba(217,119,6,0.25)",  scoreBg: "rgba(217,119,6,0.15)"  },
+  no:         { label: "No",         bg: "rgba(220,38,38,0.08)",  color: "#B91C1C", border: "rgba(220,38,38,0.25)",  scoreBg: "rgba(220,38,38,0.15)"  },
+};
+
+function scoreColor(score: number) {
+  if (score >= 8) return "#059669";
+  if (score >= 6) return "#1D4ED8";
+  if (score >= 4) return "#B45309";
+  return "#B91C1C";
+}
+
+function scoreBarColor(score: number) {
+  if (score >= 8) return "#059669";
+  if (score >= 6) return "#3B82F6";
+  if (score >= 4) return "#D97706";
+  return "#DC2626";
+}
 
 export default function EvaluationReport({ interviewId, onClose }: Props) {
   const [data, setData] = useState<ReportData | null>(null);
@@ -34,26 +59,29 @@ export default function EvaluationReport({ interviewId, onClose }: Props) {
 
   useEffect(() => {
     fetch(`/api/reports/${interviewId}`)
-      .then((r) => r.json())
+      .then(r => r.json())
       .then(setData)
       .catch(() => setError("Failed to load report"))
       .finally(() => setLoading(false));
   }, [interviewId]);
 
   const ev = data?.evaluation;
+  const reco = ev ? (RECO_CONFIG[ev.recommendation] ?? RECO_CONFIG.maybe) : null;
 
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Evaluation Report</DialogTitle>
-          <DialogDescription>
+          <DialogTitle style={{ color: DARK, fontSize: 18, fontWeight: 800 }}>
+            Evaluation Report
+          </DialogTitle>
+          <DialogDescription style={{ color: MUTED, fontSize: 13 }}>
             {data?.interview?.candidates?.name ?? "Candidate"} · {formatDuration(data?.interview?.duration_secs ?? null)}
           </DialogDescription>
         </DialogHeader>
 
         {loading && (
-          <div className="space-y-3">
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <Skeleton className="h-16 w-full" />
             <Skeleton className="h-32 w-full" />
             <Skeleton className="h-24 w-full" />
@@ -61,62 +89,89 @@ export default function EvaluationReport({ interviewId, onClose }: Props) {
         )}
 
         {error && (
-          <div className="text-rose-400 text-sm bg-rose-500/10 px-4 py-3 rounded-lg">{error}</div>
+          <div style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.2)", color: "#B91C1C", padding: "12px 16px", borderRadius: 10, fontSize: 13 }}>
+            {error}
+          </div>
         )}
 
-        {ev && (
-          <div className="space-y-6 text-sm">
-            {/* Recommendation Banner */}
-            <div className={`flex items-center justify-between rounded-xl p-5 border-2 ${recommendationColor(ev.recommendation as Recommendation)}`}>
+        {ev && reco && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 20, fontSize: 14 }}>
+
+            {/* ── Recommendation Banner ── */}
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              background: reco.bg, border: `2px solid ${reco.border}`,
+              borderRadius: 14, padding: "20px 24px",
+            }}>
               <div>
-                <p className="text-xs font-medium uppercase tracking-wider opacity-70 mb-1">Overall Recommendation</p>
-                <p className="text-2xl font-bold">{recommendationLabel(ev.recommendation as Recommendation)}</p>
+                <p style={{ fontSize: 11, fontWeight: 700, color: reco.color, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4, opacity: 0.8 }}>
+                  Overall Recommendation
+                </p>
+                <p style={{ fontSize: 26, fontWeight: 800, color: reco.color, letterSpacing: "-0.5px" }}>
+                  {reco.label}
+                </p>
               </div>
-              <div className="text-right">
-                <p className="text-xs opacity-70 mb-1">Overall Score</p>
-                <p className="text-3xl font-bold">{Number(ev.overall_score).toFixed(1)}</p>
-                <p className="text-xs opacity-70">/ 10</p>
+              <div style={{ textAlign: "right" }}>
+                <p style={{ fontSize: 11, fontWeight: 600, color: reco.color, opacity: 0.7, marginBottom: 4 }}>Overall Score</p>
+                <div style={{
+                  display: "inline-flex", alignItems: "baseline", gap: 3,
+                  background: reco.scoreBg, borderRadius: 10, padding: "8px 16px",
+                }}>
+                  <span style={{ fontSize: 34, fontWeight: 900, color: reco.color, letterSpacing: "-1.5px", lineHeight: 1 }}>
+                    {Number(ev.overall_score).toFixed(1)}
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: reco.color, opacity: 0.7 }}>/10</span>
+                </div>
               </div>
             </div>
 
-            {/* Summary */}
+            {/* ── Summary ── */}
             <div>
-              <h3 className="font-semibold text-white mb-2">Summary</h3>
-              <p className="text-slate-300 leading-relaxed text-base">{ev.summary}</p>
+              <SectionTitle text="Summary" />
+              <p style={{ color: MID, lineHeight: 1.75, fontSize: 14 }}>{ev.summary}</p>
             </div>
 
-            <Separator />
+            <Divider />
 
-            {/* 5-Axis Scores */}
+            {/* ── 5-Axis Scores ── */}
             <div>
-              <h3 className="font-semibold text-white mb-3">Evaluation Axes</h3>
-              <div className="space-y-3">
+              <SectionTitle text="Evaluation Axes" />
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {AXES.map(({ key, label, desc }) => {
                   const score = ev[key as keyof Evaluation] as number;
                   const axisKey = label.toLowerCase();
                   const quotes = ev.evidence_quotes?.[axisKey] ?? [];
+                  const color = scoreColor(score);
+                  const barColor = scoreBarColor(score);
                   return (
-                    <div key={key} className="rounded-lg border border-white/10 p-4">
-                      <div className="flex items-center justify-between mb-1">
+                    <div key={key} style={{
+                      background: "#fff", border: `1px solid ${BORDER}`,
+                      borderRadius: 12, padding: "14px 16px",
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                         <div>
-                          <span className="font-medium text-white">{label}</span>
-                          <span className="text-slate-400 text-xs ml-2">{desc}</span>
+                          <span style={{ fontWeight: 700, color: DARK, fontSize: 13 }}>{label}</span>
+                          <span style={{ color: MUTED, fontSize: 12, marginLeft: 8 }}>{desc}</span>
                         </div>
-                        <span className={`text-lg font-bold ${scoreColor(score)}`}>{score}<span className="text-xs text-slate-500 font-normal">/10</span></span>
+                        <span style={{ fontSize: 18, fontWeight: 800, color, display: "inline-flex", alignItems: "baseline", gap: 2 }}>
+                          {score}
+                          <span style={{ fontSize: 11, fontWeight: 400, color: MUTED }}>/10</span>
+                        </span>
                       </div>
-                      <div className="w-full bg-white/10 rounded-full h-1.5 mb-2">
-                        <div
-                          className={`h-1.5 rounded-full ${score >= 8 ? "bg-green-500" : score >= 6 ? "bg-blue-500" : score >= 4 ? "bg-amber-500" : "bg-rose-500"}`}
-                          style={{ width: `${score * 10}%` }}
-                        />
+                      {/* Progress bar */}
+                      <div style={{ width: "100%", background: "rgba(28,56,41,0.08)", borderRadius: 99, height: 6, marginBottom: quotes.length > 0 ? 10 : 0 }}>
+                        <div style={{ width: `${score * 10}%`, height: 6, background: barColor, borderRadius: 99, transition: "width 0.4s ease" }} />
                       </div>
                       {quotes.length > 0 && (
-                        <div className="mt-2 space-y-1">
+                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                           {quotes.slice(0, 2).map((q, i) => (
-                            <blockquote key={i} className="flex gap-2 text-xs text-slate-300 italic border-l-2 border-white/15 pl-2">
-                              <MessageSquareQuote className="h-3 w-3 shrink-0 mt-0.5 text-slate-500" />
-                              {q}
-                            </blockquote>
+                            <div key={i} style={{
+                              display: "flex", gap: 8, alignItems: "flex-start",
+                              borderLeft: `2px solid ${BORDER}`, paddingLeft: 10,
+                            }}>
+                              <MessageSquareQuote style={{ width: 12, height: 12, flexShrink: 0, marginTop: 2, color: MUTED }} />
+                              <span style={{ fontSize: 12, color: MID, fontStyle: "italic", lineHeight: 1.6 }}>{q}</span>
+                            </div>
                           ))}
                         </div>
                       )}
@@ -126,77 +181,81 @@ export default function EvaluationReport({ interviewId, onClose }: Props) {
               </div>
             </div>
 
-            <Separator />
+            <Divider />
 
-            {/* Strengths & Concerns */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <h3 className="font-semibold text-white mb-2 flex items-center gap-1.5">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" /> Strengths
+            {/* ── Strengths & Concerns ── */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <div style={{ background: "rgba(5,150,105,0.05)", border: "1px solid rgba(5,150,105,0.15)", borderRadius: 12, padding: "14px 16px" }}>
+                <h3 style={{ fontWeight: 700, color: "#059669", fontSize: 13, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+                  <CheckCircle2 style={{ width: 15, height: 15 }} /> Strengths
                 </h3>
-                <ul className="space-y-1.5">
+                <ul style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {ev.strengths?.map((s, i) => (
-                    <li key={i} className="text-slate-300 text-sm flex gap-2">
-                      <span className="text-green-400 mt-0.5">•</span>{s}
+                    <li key={i} style={{ display: "flex", gap: 8, color: MID, fontSize: 13, lineHeight: 1.5 }}>
+                      <span style={{ color: "#059669", fontWeight: 700, flexShrink: 0 }}>•</span>{s}
                     </li>
                   ))}
                 </ul>
               </div>
-              <div>
-                <h3 className="font-semibold text-white mb-2 flex items-center gap-1.5">
-                  <AlertTriangle className="h-4 w-4 text-amber-500" /> Concerns
+              <div style={{ background: "rgba(217,119,6,0.05)", border: "1px solid rgba(217,119,6,0.15)", borderRadius: 12, padding: "14px 16px" }}>
+                <h3 style={{ fontWeight: 700, color: "#B45309", fontSize: 13, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+                  <AlertTriangle style={{ width: 15, height: 15 }} /> Concerns
                 </h3>
-                <ul className="space-y-1.5">
+                <ul style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {ev.concerns?.map((c, i) => (
-                    <li key={i} className="text-slate-300 text-sm flex gap-2">
-                      <span className="text-amber-400 mt-0.5">•</span>{c}
+                    <li key={i} style={{ display: "flex", gap: 8, color: MID, fontSize: 13, lineHeight: 1.5 }}>
+                      <span style={{ color: "#D97706", fontWeight: 700, flexShrink: 0 }}>•</span>{c}
                     </li>
                   ))}
                 </ul>
               </div>
             </div>
 
-            <Separator />
+            <Divider />
 
-            {/* Screening Data */}
+            {/* ── Screening Data ── */}
             {ev.screening_data && Object.keys(ev.screening_data).length > 0 && (
               <div>
-                <h3 className="font-semibold text-white mb-3">Screening Data</h3>
-                <div className="grid grid-cols-2 gap-x-6 gap-y-2">
-                  {ev.screening_data.total_experience_years != null && (
-                    <ScreeningRow label="Total Experience" value={`${ev.screening_data.total_experience_years} yrs`} />
-                  )}
-                  {ev.screening_data.relevant_experience_years != null && (
-                    <ScreeningRow label="Relevant Experience" value={`${ev.screening_data.relevant_experience_years} yrs`} />
-                  )}
-                  {ev.screening_data.notice_period && (
-                    <ScreeningRow label="Notice Period" value={String(ev.screening_data.notice_period)} />
-                  )}
-                  {ev.screening_data.existing_offers != null && (
-                    <ScreeningRow label="Existing Offers" value={ev.screening_data.existing_offers ? "Yes" : "No"} />
-                  )}
-                  {ev.screening_data.current_ctc && (
-                    <ScreeningRow label="Current CTC" value={String(ev.screening_data.current_ctc)} />
-                  )}
-                  {ev.screening_data.expected_ctc && (
-                    <ScreeningRow label="Expected CTC" value={String(ev.screening_data.expected_ctc)} />
-                  )}
-                  {ev.screening_data.current_location && (
-                    <ScreeningRow label="Current Location" value={String(ev.screening_data.current_location)} />
-                  )}
-                  {ev.screening_data.open_to_relocate != null && (
-                    <ScreeningRow label="Open to Relocate" value={ev.screening_data.open_to_relocate ? "Yes" : "No"} />
-                  )}
+                <SectionTitle text="Screening Data" />
+                <div style={{ background: "#fff", border: `1px solid ${BORDER}`, borderRadius: 12, overflow: "hidden" }}>
+                  {[
+                    ev.screening_data.total_experience_years != null && { label: "Total Experience",    value: `${ev.screening_data.total_experience_years} yrs` },
+                    ev.screening_data.relevant_experience_years != null && { label: "Relevant Experience", value: `${ev.screening_data.relevant_experience_years} yrs` },
+                    ev.screening_data.notice_period && { label: "Notice Period",       value: String(ev.screening_data.notice_period) },
+                    ev.screening_data.existing_offers != null && { label: "Existing Offers",    value: ev.screening_data.existing_offers ? "Yes" : "No" },
+                    ev.screening_data.current_ctc && { label: "Current CTC",         value: String(ev.screening_data.current_ctc) },
+                    ev.screening_data.expected_ctc && { label: "Expected CTC",        value: String(ev.screening_data.expected_ctc) },
+                    ev.screening_data.current_location && { label: "Current Location",    value: String(ev.screening_data.current_location) },
+                    ev.screening_data.open_to_relocate != null && { label: "Open to Relocate",   value: ev.screening_data.open_to_relocate ? "Yes" : "No" },
+                  ].filter(Boolean).map((row, i, arr) => {
+                    const r = row as { label: string; value: string };
+                    return (
+                      <div key={r.label} style={{
+                        display: "flex", justifyContent: "space-between", alignItems: "center",
+                        padding: "11px 16px",
+                        borderBottom: i < arr.length - 1 ? `1px solid ${BORDER}` : "none",
+                      }}>
+                        <span style={{ fontSize: 13, color: MUTED }}>{r.label}</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: DARK }}>{r.value}</span>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {ev.screening_data.skill_ratings && Object.keys(ev.screening_data.skill_ratings).length > 0 && (
-                  <div className="mt-3">
-                    <p className="text-xs font-medium text-slate-400 mb-2">Self-rated Skills (1–5)</p>
-                    <div className="flex flex-wrap gap-2">
+                  <div style={{ marginTop: 12 }}>
+                    <p style={{ fontSize: 11, fontWeight: 700, color: MUTED, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>
+                      Self-rated Skills (1–5)
+                    </p>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                       {Object.entries(ev.screening_data.skill_ratings).map(([skill, rating]) => (
-                        <div key={skill} className="flex items-center gap-1.5 bg-white/5 border border-white/10 rounded px-2.5 py-1">
-                          <span className="text-xs text-slate-300">{skill}</span>
-                          <span className="text-xs font-bold text-indigo-400">{rating}/5</span>
+                        <div key={skill} style={{
+                          display: "flex", alignItems: "center", gap: 6,
+                          background: "#fff", border: `1px solid ${BORDER}`,
+                          borderRadius: 99, padding: "5px 12px",
+                        }}>
+                          <span style={{ fontSize: 12, color: MID, fontWeight: 500 }}>{skill}</span>
+                          <span style={{ fontSize: 12, fontWeight: 800, color: "#6366F1" }}>{rating}/5</span>
                         </div>
                       ))}
                     </div>
@@ -205,16 +264,19 @@ export default function EvaluationReport({ interviewId, onClose }: Props) {
               </div>
             )}
 
-            {/* Recruiter note — display only */}
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg px-4 py-3 text-xs text-amber-300">
+            {/* ── Disclaimer ── */}
+            <div style={{
+              background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)",
+              borderRadius: 10, padding: "12px 16px", fontSize: 12, color: "#92400E",
+            }}>
               <strong>Note:</strong> This report is generated by AI. The final hiring decision must be made by a human recruiter.
             </div>
           </div>
         )}
 
         {!loading && !error && !ev && (
-          <div className="text-center py-8 text-slate-400">
-            <p>Analysis is being generated. Refresh in a moment.</p>
+          <div style={{ textAlign: "center", padding: "40px 0", color: MUTED, fontSize: 14 }}>
+            Analysis is being generated. Refresh in a moment.
           </div>
         )}
       </DialogContent>
@@ -222,11 +284,14 @@ export default function EvaluationReport({ interviewId, onClose }: Props) {
   );
 }
 
-function ScreeningRow({ label, value }: { label: string; value: string }) {
+function SectionTitle({ text }: { text: string }) {
   return (
-    <div className="flex justify-between py-1.5 border-b border-white/10">
-      <span className="text-slate-400">{label}</span>
-      <span className="font-medium text-white">{value}</span>
-    </div>
+    <h3 style={{ fontSize: 13, fontWeight: 700, color: DARK, marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+      {text}
+    </h3>
   );
+}
+
+function Divider() {
+  return <div style={{ height: 1, background: BORDER }} />;
 }

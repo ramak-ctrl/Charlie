@@ -122,7 +122,7 @@ export default function CandidateTable({ candidates, jobId, appUrl }: Props) {
                           onClick={() => handleSync(interview.id)}
                           disabled={syncing === interview.id}
                           aria-label={`Sync status for ${c.name}`}
-                          className="p-1.5 rounded-md text-muted-foreground hover:text-blue-400 hover:bg-blue-500/10 transition-colors disabled:opacity-40"
+                          className="p-1.5 rounded-md text-muted-foreground hover:text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-40"
                           title="Sync interview status"
                         >
                           <RefreshCw className={`h-3.5 w-3.5 ${syncing === interview.id ? "animate-spin" : ""}`} />
@@ -183,10 +183,10 @@ export default function CandidateTable({ candidates, jobId, appUrl }: Props) {
 
 function CandidateStatusBadge({ status }: { status: string }) {
   const config: Record<string, { label: string; className: string; icon: React.ReactNode }> = {
-    invited:   { label: "Invited",     className: "text-muted-foreground bg-muted border-border",                icon: <Clock className="h-3 w-3" /> },
-    started:   { label: "In Progress", className: "text-blue-400 bg-blue-500/10 border-blue-500/20",             icon: <Clock className="h-3 w-3" /> },
-    completed: { label: "Completed",   className: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",   icon: <CheckCircle2 className="h-3 w-3" /> },
-    reviewed:  { label: "Reviewed",    className: "text-violet-400 bg-violet-500/10 border-violet-500/20",      icon: <CheckCircle2 className="h-3 w-3" /> },
+    invited:   { label: "Invited",     className: "text-slate-600 bg-slate-100 border-slate-200",               icon: <Clock className="h-3 w-3" /> },
+    started:   { label: "In Progress", className: "text-blue-700 bg-blue-50 border-blue-200",                   icon: <Clock className="h-3 w-3" /> },
+    completed: { label: "Completed",   className: "text-emerald-700 bg-emerald-50 border-emerald-200",          icon: <CheckCircle2 className="h-3 w-3" /> },
+    reviewed:  { label: "Reviewed",    className: "text-violet-700 bg-violet-50 border-violet-200",             icon: <CheckCircle2 className="h-3 w-3" /> },
   };
   const cfg = config[status] ?? config.invited;
   return (
