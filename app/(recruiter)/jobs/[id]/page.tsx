@@ -75,7 +75,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
       *,
       interview_tokens(token, expires_at, used_at),
       interviews(id, status, duration_secs, completed_at,
-        evaluations(overall_score, recommendation, communication_score, criteria_results)
+        evaluations(*)
       )
     `)
     .eq("job_id", id)

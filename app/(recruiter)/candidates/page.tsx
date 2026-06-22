@@ -34,9 +34,7 @@ export default async function CandidatesPage() {
   const { data } = await supabase
     .from("candidates")
     .select(`
-      id, name, email, phone, status,
-      notice_period, current_location, current_ctc, expected_ctc,
-      linkedin_url, primary_skills, created_at,
+      *,
       jobs!inner(id, title, created_by),
       interviews(
         id, status, duration_secs, completed_at,
