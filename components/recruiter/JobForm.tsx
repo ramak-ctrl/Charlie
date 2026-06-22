@@ -66,6 +66,8 @@ export default function JobForm({ job, userFullName = "" }: Props) {
   const { toast } = useToast();
   const isEditing = !!job;
 
+  const [criterionInput, setCriterionInput] = useState("");
+  const [criteria, setCriteria] = useState<string[]>(job?.role_criteria ?? []);
   const [skillInput, setSkillInput] = useState("");
   const [skills, setSkills] = useState<string[]>(job?.key_skills ?? []);
   const [questions, setQuestions] = useState<Omit<ScreeningQuestion, "id" | "job_id" | "created_at">[]>(
@@ -76,7 +78,7 @@ export default function JobForm({ job, userFullName = "" }: Props) {
       : DEFAULT_SCREENING_QUESTIONS
   );
   const [submitting, setSubmitting] = useState(false);
-  const [open, setOpen] = useState([0, 1, 2, 3]);
+  const [open, setOpen] = useState([0, 1, 2, 3, 4]);
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -122,6 +124,7 @@ export default function JobForm({ job, userFullName = "" }: Props) {
       const payload = {
         ...data,
         key_skills: skills,
+        role_criteria: criteria,
         screening_questions: questions,
         expiry_date:         data.expiry_date         || null,
         expected_start_date: data.expected_start_date || null,
@@ -386,8 +389,84 @@ export default function JobForm({ job, userFullName = "" }: Props) {
         </div>
       </Section>
 
-      {/* ── Section 3: Interview Skills (for candidate self-rating) ── */}
-      <Section title="Interview Skills" index={2} open={open.includes(2)} onToggle={toggleSection}>
+      {/* ── Section 3: Role Fit Criteria ── */}
+      <Section title="Role Fit Criteria" index={2} open={open.includes(2)} onToggle={toggleSection}>
+        <p style={{ fontSize: 13, color: MUTED, marginBottom: 4 }}>
+          Add 3–5 checkable facts Charlie will verify against the transcript. Write testable statements, not personality traits.
+        </p>
+        <p style={{ fontSize: 12, color: "rgba(28,56,41,0.4)", marginBottom: 14, fontStyle: "italic" }}>
+          e.g. "Has carried a revenue quota", "Managed a team of 3+", "Handled enterprise deals over ₹50L"
+        </p>
+        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+          <input
+            value={criterionInput}
+            onChange={e => setCriterionInput(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                const s = criterionInput.trim();
+                if (s && !criteria.includes(s)) setCriteria([...criteria, s]);
+                setCriterionInput("");
+              }
+            }}
+            placeholder="e.g. Has carried a sales quota before"
+            style={{ ...inputStyle, flex: 1 }}
+            onFocus={e => (e.target.style.borderColor = DARK)}
+            onBlur={e => (e.target.style.borderColor = BORDER)}
+            aria-label="Add criterion"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              const s = criterionInput.trim();
+              if (s && !criteria.includes(s)) setCriteria([...criteria, s]);
+              setCriterionInput("");
+            }}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: 42, height: 42, borderRadius: 10,
+              background: DARK, color: "#fff",
+              border: "none", cursor: "pointer", flexShrink: 0,
+            }}
+            aria-label="Add criterion"
+          >
+            <Plus style={{ width: 16, height: 16 }} />
+          </button>
+        </div>
+        {criteria.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {criteria.map((c, i) => (
+              <div key={c} style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                background: "rgba(28,56,41,0.04)", color: MID,
+                padding: "10px 14px", borderRadius: 10,
+                border: "1px solid rgba(28,56,41,0.1)",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{
+                    width: 20, height: 20, borderRadius: 6,
+                    background: "rgba(28,56,41,0.1)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 11, fontWeight: 800, color: DARK, flexShrink: 0,
+                  }}>{i + 1}</span>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: DARK }}>{c}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCriteria(criteria.filter(x => x !== c))}
+                  aria-label={`Remove criterion: ${c}`}
+                  style={{ background: "none", border: "none", cursor: "pointer", color: MUTED, padding: 4, display: "flex" }}
+                >
+                  <X style={{ width: 14, height: 14 }} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </Section>
+
+      {/* ── Section 4: Interview Skills (for candidate self-rating) ── */}
+      <Section title="Interview Skills" index={3} open={open.includes(3)} onToggle={toggleSection}>
         <p style={{ fontSize: 13, color: MUTED, marginBottom: 12 }}>
           Candidates self-rate each skill on a 1–5 scale during the Charlie interview.
         </p>
@@ -441,8 +520,8 @@ export default function JobForm({ job, userFullName = "" }: Props) {
         )}
       </Section>
 
-      {/* ── Section 4: Screening Questions ── */}
-      <Section title="Screening Questions" index={3} open={open.includes(3)} onToggle={toggleSection}>
+      {/* ── Section 5: Screening Questions ── */}
+      <Section title="Screening Questions" index={4} open={open.includes(4)} onToggle={toggleSection}>
         <p style={{ fontSize: 13, color: MUTED, marginBottom: 14 }}>
           Questions asked by Charlie during the screening call. Reorder, edit, add, or remove as needed.
         </p>

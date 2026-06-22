@@ -22,6 +22,7 @@ const UpdateJobSchema = z.object({
   must_have_skills:     z.string().optional().nullable(),
   nice_to_have_skills:  z.string().optional().nullable(),
   key_skills:           z.array(z.string()).optional(),
+  role_criteria:        z.array(z.string()).optional(),
   status:               z.enum(["draft", "active", "paused", "closed"]).optional(),
   screening_questions: z.array(z.object({
     id:            z.string().uuid().optional(),

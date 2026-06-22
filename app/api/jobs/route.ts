@@ -23,6 +23,7 @@ const CreateJobSchema = z.object({
   must_have_skills:     z.string().optional().nullable(),
   nice_to_have_skills:  z.string().optional().nullable(),
   key_skills:           z.array(z.string()).default([]),
+  role_criteria:        z.array(z.string()).default([]),
   status:               z.enum(["draft", "active", "paused", "closed"]).default("draft"),
   screening_questions: z.array(z.object({
     question:      z.string().min(1),

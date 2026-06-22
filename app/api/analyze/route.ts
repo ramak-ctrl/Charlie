@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
   const { data: interview } = await supabase
     .from("interviews")
-    .select("*, jobs(title, key_skills, screening_questions(*))")
+    .select("*, jobs(title, key_skills, role_criteria, screening_questions(*))")
     .eq("id", parsed.data.interview_id)
     .single();
 
@@ -34,12 +34,12 @@ export async function POST(request: NextRequest) {
 
   if (existing) return NextResponse.json({ message: "Already analyzed", id: existing.id });
 
-  const jobData = interview.jobs as { title: string; key_skills: string[]; screening_questions: ScreeningQuestion[] };
+  const jobData = interview.jobs as { title: string; key_skills: string[]; role_criteria: string[]; screening_questions: ScreeningQuestion[] };
 
   try {
     const result = await analyzeInterview({
       transcript: interview.transcript as { role: "agent" | "user"; content: string }[],
-      job: { title: jobData.title, key_skills: jobData.key_skills },
+      job: { title: jobData.title, key_skills: jobData.key_skills, role_criteria: jobData.role_criteria ?? [] },
       screeningQuestions: jobData.screening_questions ?? [],
     });
 

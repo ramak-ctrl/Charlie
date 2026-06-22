@@ -5,8 +5,8 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDuration } from "@/lib/utils";
-import { CheckCircle2, AlertTriangle, MessageSquareQuote } from "lucide-react";
-import type { Evaluation, Interview, Candidate } from "@/lib/types";
+import { CheckCircle2, AlertTriangle, MessageSquareQuote, CheckCheck, XCircle, HelpCircle } from "lucide-react";
+import type { Evaluation, Interview, Candidate, CriterionResult } from "@/lib/types";
 
 const DARK   = "#1C3829";
 const MID    = "#3D6B54";
@@ -124,6 +124,11 @@ export default function EvaluationReport({ interviewId, onClose }: Props) {
                 </div>
               </div>
             </div>
+
+            {/* ── Role Fit ── */}
+            {ev.criteria_results && ev.criteria_results.length > 0 && (
+              <RoleFitSection criteria={ev.criteria_results as CriterionResult[]} />
+            )}
 
             {/* ── Summary ── */}
             <div>
@@ -281,6 +286,108 @@ export default function EvaluationReport({ interviewId, onClose }: Props) {
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function RoleFitSection({ criteria }: { criteria: CriterionResult[] }) {
+  const met         = criteria.filter(c => c.status === "met").length;
+  const unmet       = criteria.filter(c => c.status === "unmet").length;
+  const unconfirmed = criteria.filter(c => c.status === "unconfirmed");
+  const total       = criteria.length;
+
+  const STATUS_CFG = {
+    met:          { icon: CheckCheck,  color: "#059669", bg: "rgba(5,150,105,0.08)",  border: "rgba(5,150,105,0.2)",  label: "Confirmed" },
+    unmet:        { icon: XCircle,     color: "#B91C1C", bg: "rgba(220,38,38,0.06)",  border: "rgba(220,38,38,0.18)", label: "Not confirmed" },
+    unconfirmed:  { icon: HelpCircle,  color: "#B45309", bg: "rgba(217,119,6,0.07)",  border: "rgba(217,119,6,0.2)",  label: "Not discussed" },
+  };
+
+  return (
+    <div style={{
+      background: "#fff", border: `1px solid ${BORDER}`,
+      borderRadius: 14, overflow: "hidden",
+    }}>
+      {/* Header */}
+      <div style={{
+        padding: "14px 18px",
+        background: "rgba(28,56,41,0.03)",
+        borderBottom: `1px solid ${BORDER}`,
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+      }}>
+        <div>
+          <p style={{ fontSize: 11, fontWeight: 700, color: MUTED, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 2 }}>
+            Role Fit
+          </p>
+          <p style={{ fontSize: 18, fontWeight: 800, color: DARK, letterSpacing: "-0.5px" }}>
+            Met <span style={{ color: met === total ? "#059669" : met >= total / 2 ? "#B45309" : "#B91C1C" }}>{met}</span> of {total} criteria
+          </p>
+        </div>
+        {unconfirmed.length > 0 && (
+          <div style={{
+            fontSize: 12, color: "#92400E", background: "rgba(245,158,11,0.1)",
+            border: "1px solid rgba(245,158,11,0.25)", borderRadius: 8,
+            padding: "6px 12px", maxWidth: 220, textAlign: "right", lineHeight: 1.5,
+          }}>
+            Probe further on: <strong>{unconfirmed.map(c => c.criterion).join(", ")}</strong>
+          </div>
+        )}
+      </div>
+
+      {/* Criteria list */}
+      <div>
+        {criteria.map((c, i) => {
+          const cfg = STATUS_CFG[c.status];
+          const Icon = cfg.icon;
+          return (
+            <div key={i} style={{
+              padding: "12px 18px",
+              borderBottom: i < criteria.length - 1 ? `1px solid ${BORDER}` : "none",
+              background: cfg.bg,
+            }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                <div style={{
+                  width: 28, height: 28, borderRadius: 8, flexShrink: 0, marginTop: 1,
+                  background: cfg.bg, border: `1px solid ${cfg.border}`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <Icon style={{ width: 14, height: 14, color: cfg.color }} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: c.evidence ? 5 : 0 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: DARK }}>{c.criterion}</span>
+                    <span style={{
+                      fontSize: 11, fontWeight: 600, color: cfg.color,
+                      background: "rgba(255,255,255,0.7)", border: `1px solid ${cfg.border}`,
+                      borderRadius: 99, padding: "2px 8px", whiteSpace: "nowrap",
+                    }}>
+                      {cfg.label}
+                    </span>
+                  </div>
+                  {c.evidence && (
+                    <div style={{ display: "flex", gap: 6, alignItems: "flex-start" }}>
+                      <MessageSquareQuote style={{ width: 12, height: 12, flexShrink: 0, marginTop: 2, color: MUTED }} />
+                      <span style={{ fontSize: 12, color: MID, fontStyle: "italic", lineHeight: 1.6 }}>
+                        &ldquo;{c.evidence}&rdquo;
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Footer note */}
+      {unmet > 0 && (
+        <div style={{
+          padding: "10px 18px", borderTop: `1px solid ${BORDER}`,
+          background: "rgba(28,56,41,0.02)",
+          fontSize: 12, color: MUTED, fontStyle: "italic",
+        }}>
+          {unmet} criterion{unmet > 1 ? "a" : "on"} explicitly not confirmed by the candidate.
+        </div>
+      )}
+    </div>
   );
 }
 

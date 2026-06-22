@@ -3,7 +3,7 @@ import type { Evaluation, Job, ScreeningQuestion, TranscriptEntry } from "./type
 
 function buildPrompts(params: {
   transcript: TranscriptEntry[];
-  job: Pick<Job, "title" | "key_skills">;
+  job: Pick<Job, "title" | "key_skills" | "role_criteria">;
   screeningQuestions: ScreeningQuestion[];
 }) {
   const { transcript, job, screeningQuestions } = params;
@@ -15,7 +15,34 @@ function buildPrompts(params: {
   const skillsList = job.key_skills.join(", ");
   const questionsList = screeningQuestions.map((q, i) => `${i + 1}. ${q.question}`).join("\n");
 
-  const system = `You are an expert recruitment analyst. Analyze the interview transcript for a ${job.title} position and provide a structured evaluation. Return ONLY valid JSON matching the schema exactly.`;
+  const hasCriteria = job.role_criteria && job.role_criteria.length > 0;
+  const criteriaList = hasCriteria
+    ? job.role_criteria.map((c, i) => `${i + 1}. ${c}`).join("\n")
+    : "";
+
+  const criteriaSchema = hasCriteria ? `
+  "criteria_results": [
+    {
+      "criterion": "<exact criterion text from the list above>",
+      "status": "<met|unmet|unconfirmed>",
+      "evidence": "<direct quote from candidate, or null if unconfirmed>"
+    }
+  ],` : `
+  "criteria_results": [],`;
+
+  const criteriaInstructions = hasCriteria ? `
+## Role Fit Criteria to Check:
+${criteriaList}
+
+For each criterion above, search the transcript carefully and classify:
+- "met": Candidate explicitly confirmed or demonstrated this (cite exact quote)
+- "unmet": Candidate explicitly contradicted or denied this (cite exact quote)
+- "unconfirmed": Not discussed, unclear, or cannot be determined without inference
+
+IMPORTANT: Do not infer or assume. Only mark "met" or "unmet" if the candidate actually said something that directly addresses the criterion. If in doubt, mark "unconfirmed". Never fabricate or paraphrase a quote — use the candidate's actual words.
+` : "";
+
+  const system = `You are an expert recruitment analyst. Analyze the interview transcript for a ${job.title} position and provide a structured evaluation. Return ONLY valid JSON matching the schema exactly. Do not output hiring decisions, "hire"/"reject" language, or any binary pass/fail verdict.`;
 
   const user = `
 ## Job: ${job.title}
@@ -23,7 +50,7 @@ function buildPrompts(params: {
 
 ## Screening Questions Asked:
 ${questionsList}
-
+${criteriaInstructions}
 ## Full Interview Transcript:
 ${transcriptText}
 
@@ -37,7 +64,7 @@ Analyze this interview and return a JSON object with exactly this structure:
   "reliability_score": <1-10>,
   "overall_score": <1-10 with one decimal>,
   "recommendation": <"strong_yes"|"yes"|"maybe"|"no">,
-  "summary": "<2-3 sentence executive summary>",
+  "summary": "<2-3 sentence executive summary of what the candidate actually said — factual, no hire/reject language>",
   "strengths": ["<strength1>", "<strength2>", "<strength3>"],
   "concerns": ["<concern1>", "<concern2>"],
   "evidence_quotes": {
@@ -46,7 +73,7 @@ Analyze this interview and return a JSON object with exactly this structure:
     "composure": ["<direct quote>"],
     "professionalism": ["<direct quote>"],
     "reliability": ["<direct quote>"]
-  },
+  },${criteriaSchema}
   "screening_data": {
     "total_experience_years": <number or null>,
     "relevant_experience_years": <number or null>,
@@ -67,6 +94,7 @@ Analyze this interview and return a JSON object with exactly this structure:
 - Professionalism (1-10): Tone, courtesy, appropriate conduct
 - Reliability (1-10): Consistency of story, specificity of examples, self-awareness
 - Recommendation: strong_yes (8+), yes (6.5-7.9), maybe (5-6.4), no (<5)
+- criteria_results: must contain one entry per criterion in the list above, in the same order
 
 Return ONLY the JSON object, no markdown fences or explanation.
 `;
@@ -149,7 +177,7 @@ async function analyzeWithClaude(params: Parameters<typeof buildPrompts>[0]) {
 
   const response = await client.messages.create({
     model: "claude-sonnet-4-6",
-    max_tokens: 2048,
+    max_tokens: 3000,
     system,
     messages: [{ role: "user", content: user }],
   });
@@ -161,7 +189,7 @@ async function analyzeWithClaude(params: Parameters<typeof buildPrompts>[0]) {
 export async function analyzeInterview(
   params: {
     transcript: TranscriptEntry[];
-    job: Pick<Job, "title" | "key_skills">;
+    job: Pick<Job, "title" | "key_skills" | "role_criteria">;
     screeningQuestions: ScreeningQuestion[];
   }
 ): Promise<Omit<Evaluation, "id" | "interview_id" | "recruiter_confirmed" | "recruiter_notes" | "created_at">> {

@@ -21,6 +21,12 @@ export interface Profile {
   created_at: string;
 }
 
+export interface CriterionResult {
+  criterion: string;
+  status: "met" | "unmet" | "unconfirmed";
+  evidence: string | null;
+}
+
 export interface Job {
   id: string;
   org_id: string | null;
@@ -44,6 +50,7 @@ export interface Job {
   must_have_skills: string | null;
   nice_to_have_skills: string | null;
   key_skills: string[];
+  role_criteria: string[];
   status: JobStatus;
   created_at: string;
   updated_at: string;
@@ -129,6 +136,7 @@ export interface Evaluation {
   concerns: string[];
   evidence_quotes: Record<string, string[]>;
   screening_data: ScreeningData;
+  criteria_results: CriterionResult[];
   recruiter_confirmed: boolean;
   recruiter_notes: string | null;
   created_at: string;
