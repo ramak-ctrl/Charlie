@@ -1,0 +1,36 @@
+# Render Blueprint for the Charlie web app (Next.js).
+# Deploy the voice bot separately from the bot repo (ramak-ctrl/tom).
+services:
+  - type: web
+    name: charlie
+    runtime: node
+    plan: starter            # free tier works for testing; starter avoids cold-start sleeps
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    healthCheckPath: /
+    envVars:
+      # ── Supabase (required; read directly at runtime + build) ──
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      # ── App + voice wiring ──
+      - key: NEXT_PUBLIC_APP_URL
+        sync: false          # set to this service's public URL, e.g. https://charlie.onrender.com
+      - key: VOICE_PROVIDER
+        value: pipecat
+      - key: NEXT_PUBLIC_TOM_BOT_URL
+        sync: false          # the deployed voice bot URL, e.g. https://charlie-voice-bot.onrender.com
+      # ── API keys (optional here — can be managed in-app via Admin Settings instead) ──
+      - key: GROQ_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: DEEPGRAM_API_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
