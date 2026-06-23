@@ -42,14 +42,15 @@ load_dotenv(override=True)
 API_URL = os.getenv("TOM_API_URL", "http://localhost:8000")
 METERED_API_KEY = os.getenv("METERED_API_KEY", "")
 METERED_APP_DOMAIN = os.getenv("METERED_APP_DOMAIN", "tom-interviews.metered.live")
+CLOUDFLARE_TURN_KEY_ID = os.getenv("CLOUDFLARE_TURN_KEY_ID", "")
+CLOUDFLARE_TURN_API_TOKEN = os.getenv("CLOUDFLARE_TURN_API_TOKEN", "")
 
 CLOSING_PREFIX = "CLOSING:"
 
 # ── ICE servers ───────────────────────────────────────────────────────────────
 
 def _fallback_ice_servers() -> list[IceServer]:
-    """Free public STUN + Open Relay TURN — works without a Metered key (best effort).
-    TURN over :443/TCP is what lets media traverse restrictive networks + PaaS hosts."""
+    """Free public STUN + Open Relay TURN (best effort)."""
     return [
         IceServer(urls="stun:stun.l.google.com:19302"),
         IceServer(urls="turn:openrelay.metered.ca:80", username="openrelayproject", credential="openrelayproject"),
@@ -58,33 +59,72 @@ def _fallback_ice_servers() -> list[IceServer]:
     ]
 
 
+async def _fetch_cloudflare_ice() -> list[IceServer]:
+    """Cloudflare TURN — free + reliable. Generates short-lived credentials."""
+    url = f"https://rtc.live.cloudflare.com/v1/turn/keys/{CLOUDFLARE_TURN_KEY_ID}/credentials/generate"
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            url,
+            headers={"Authorization": f"Bearer {CLOUDFLARE_TURN_API_TOKEN}"},
+            json={"ttl": 86400},
+            timeout=10.0,
+        )
+        resp.raise_for_status()
+        ice = resp.json().get("iceServers", {})
+    urls = ice.get("urls", [])
+    if isinstance(urls, str):
+        urls = [urls]
+    username = ice.get("username")
+    credential = ice.get("credential")
+    servers = []
+    for u in urls:
+        if u.startswith("stun:"):
+            servers.append(IceServer(urls=u))
+        else:
+            servers.append(IceServer(urls=u, username=username, credential=credential))
+    if not servers:
+        raise ValueError("Cloudflare returned no ICE servers")
+    return servers
+
+
+async def _fetch_metered_ice() -> list[IceServer]:
+    url = f"https://{METERED_APP_DOMAIN}/api/v1/turn/credentials?apiKey={METERED_API_KEY}"
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(url, timeout=10.0)
+        resp.raise_for_status()
+        data = resp.json()
+    if not isinstance(data, list) or not data:
+        raise ValueError(f"unexpected Metered response: {data}")
+    servers = []
+    for s in data:
+        urls = s.get("urls", "")
+        username = s.get("username")
+        credential = s.get("credential")
+        if username and credential:
+            servers.append(IceServer(urls=urls, username=username, credential=credential))
+        else:
+            servers.append(IceServer(urls=urls))
+    return servers
+
+
 async def fetch_metered_ice_servers() -> list[IceServer]:
-    """Fetch TURN credentials from Metered; fall back to free STUN/Open Relay TURN."""
-    if not METERED_API_KEY:
-        logger.warning("METERED_API_KEY not set — using free STUN/Open Relay TURN fallback")
-        return _fallback_ice_servers()
-    try:
-        url = f"https://{METERED_APP_DOMAIN}/api/v1/turn/credentials?apiKey={METERED_API_KEY}"
-        async with httpx.AsyncClient() as client:
-            resp = await client.get(url, timeout=10.0)
-            resp.raise_for_status()
-            data = resp.json()
-        if not isinstance(data, list) or not data:
-            raise ValueError(f"unexpected Metered response: {data}")
-        servers = []
-        for s in data:
-            urls = s.get("urls", "")
-            username = s.get("username")
-            credential = s.get("credential")
-            if username and credential:
-                servers.append(IceServer(urls=urls, username=username, credential=credential))
-            else:
-                servers.append(IceServer(urls=urls))
-        logger.info(f"Fetched {len(servers)} ICE servers from Metered")
-        return servers
-    except Exception as e:
-        logger.error(f"Metered ICE fetch failed: {e} — using free STUN/Open Relay TURN fallback")
-        return _fallback_ice_servers()
+    """Resolve TURN/ICE servers: Cloudflare → Metered → free fallback."""
+    if CLOUDFLARE_TURN_KEY_ID and CLOUDFLARE_TURN_API_TOKEN:
+        try:
+            servers = await _fetch_cloudflare_ice()
+            logger.info(f"Fetched {len(servers)} ICE servers from Cloudflare TURN")
+            return servers
+        except Exception as e:
+            logger.error(f"Cloudflare TURN fetch failed: {e}")
+    if METERED_API_KEY:
+        try:
+            servers = await _fetch_metered_ice()
+            logger.info(f"Fetched {len(servers)} ICE servers from Metered")
+            return servers
+        except Exception as e:
+            logger.error(f"Metered ICE fetch failed: {e}")
+    logger.warning("No working TURN provider — using free STUN/Open Relay fallback")
+    return _fallback_ice_servers()
 
 
 # ── System prompt ─────────────────────────────────────────────────────────────
