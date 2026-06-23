@@ -19,6 +19,7 @@ export type CandidateRow = {
   created_at: string;
   job_id: string;
   jobs: { id: string; title: string } | null;
+  interview_tokens: { token: string; expires_at: string; used_at: string | null }[];
   interviews: {
     id: string;
     status: string;
@@ -69,6 +70,7 @@ export default async function CandidatesPage() {
     .select(`
       *,
       jobs!inner(id, title, created_by),
+      interview_tokens(token, expires_at, used_at),
       interviews(
         id, status, duration_secs, completed_at,
         evaluations(*)

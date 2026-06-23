@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Users, UserCheck, Clock, CheckCircle2, Star,
-  Search, Trash2, ArrowRight, ExternalLink, FileText,
+  Search, Trash2, ArrowRight, ExternalLink, FileText, Copy,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import EvaluationReport from "@/components/recruiter/EvaluationReport";
@@ -20,6 +20,7 @@ const CAND_COLUMNS: ColumnDef[] = [
   { key: "notice", label: "Notice" },
   { key: "location", label: "Location" },
   { key: "added", label: "Added" },
+  { key: "link", label: "Interview Link" },
 ];
 
 const DARK   = "#1C3829";
@@ -72,7 +73,14 @@ export default function CandidatesListClient({ candidates, candidateRanks }: Pro
   const [search, setSearch] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);
   const [reportInterviewId, setReportInterviewId] = useState<string | null>(null);
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
   const { visible, toggle } = useColumnVisibility("candidates-table-cols", CAND_COLUMNS);
+
+  function copyLink(token: string) {
+    navigator.clipboard.writeText(`${window.location.origin}/interview/${token}`);
+    setCopiedToken(token);
+    setTimeout(() => setCopiedToken(null), 1500);
+  }
 
   const counts: Record<string, number> = {
     all:       candidates.length,
@@ -171,6 +179,7 @@ export default function CandidatesListClient({ candidates, candidateRanks }: Pro
                   {visible.notice && <th style={TH}>NOTICE</th>}
                   {visible.location && <th style={TH}>LOCATION</th>}
                   {visible.added && <th style={TH}>ADDED</th>}
+                  {visible.link && <th style={TH}>INTERVIEW LINK</th>}
                   <th style={{ ...TH, textAlign: "right", width: 100 }}>ACTIONS</th>
                 </tr>
               </thead>
@@ -302,6 +311,43 @@ export default function CandidatesListClient({ candidates, candidateRanks }: Pro
                           {formatDate(c.created_at)}
                         </td>
                       )}
+
+                      {/* Interview Link */}
+                      {visible.link && (() => {
+                        const tk = c.interview_tokens?.[0];
+                        const linkExpired = tk ? new Date(tk.expires_at) < new Date() : false;
+                        return (
+                          <td style={{ padding: "13px 14px" }} onClick={(e) => e.stopPropagation()}>
+                            {tk && !linkExpired && !tk.used_at ? (
+                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                <span
+                                  style={{ fontSize: 12, color: MID, fontFamily: "monospace", maxWidth: 130, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                                  title={`/interview/${tk.token}`}
+                                >
+                                  /interview/{tk.token.slice(0, 8)}…
+                                </span>
+                                <button
+                                  onClick={() => copyLink(tk.token)}
+                                  aria-label={`Copy interview link for ${c.name}`}
+                                  title="Copy interview link"
+                                  style={{ padding: 4, borderRadius: 6, background: "none", border: "none", color: MUTED, cursor: "pointer" }}
+                                  className="hover:text-foreground hover:bg-accent/40 transition-colors"
+                                >
+                                  {copiedToken === tk.token
+                                    ? <CheckCircle2 style={{ width: 14, height: 14, color: "#059669" }} />
+                                    : <Copy style={{ width: 14, height: 14 }} />}
+                                </button>
+                              </div>
+                            ) : tk?.used_at ? (
+                              <span style={{ fontSize: 12, color: MUTED }}>Used</span>
+                            ) : linkExpired ? (
+                              <span style={{ fontSize: 12, color: "#DC2626" }}>Expired</span>
+                            ) : (
+                              <span style={{ color: "rgba(28,56,41,0.2)", fontSize: 13 }}>—</span>
+                            )}
+                          </td>
+                        );
+                      })()}
 
                       {/* Actions */}
                       <td style={{ padding: "13px 10px" }} onClick={e => e.stopPropagation()}>
