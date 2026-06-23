@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import CandidatesListClient from "@/components/recruiter/CandidatesListClient";
+import AddCandidateButton from "@/components/recruiter/AddCandidateButton";
 
 type CriterionResult = { criterion: string; status: "met" | "unmet" | "unconfirmed"; evidence: string | null };
 
@@ -83,18 +84,30 @@ export default async function CandidatesPage() {
 
   const candidateRanks = computeAllRanks(candidates);
 
+  // Open positions for the "Add candidate" job dropdown.
+  const { data: jobsData } = await supabase
+    .from("jobs")
+    .select("id, title")
+    .eq("created_by", user!.id)
+    .eq("status", "active")
+    .order("created_at", { ascending: false });
+  const openJobs = (jobsData as { id: string; title: string }[]) ?? [];
+
   return (
     <div style={{ padding: "28px 32px" }}>
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.8px", color: DARK, lineHeight: 1 }}>
-            All Candidates
-          </h1>
-          <span style={{ background: "rgba(28,56,41,0.08)", color: DARK, fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 99, border: "1px solid rgba(28,56,41,0.14)" }}>
-            {candidates.length}
-          </span>
+      <div style={{ marginBottom: 24, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
+            <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.8px", color: DARK, lineHeight: 1 }}>
+              All Candidates
+            </h1>
+            <span style={{ background: "rgba(28,56,41,0.08)", color: DARK, fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 99, border: "1px solid rgba(28,56,41,0.14)" }}>
+              {candidates.length}
+            </span>
+          </div>
+          <p style={{ fontSize: 13, color: MUTED }}>All candidates screened by Charlie across your job listings.</p>
         </div>
-        <p style={{ fontSize: 13, color: MUTED }}>All candidates screened by Charlie across your job listings.</p>
+        <AddCandidateButton jobs={openJobs} />
       </div>
 
       <CandidatesListClient candidates={candidates} candidateRanks={candidateRanks} />
