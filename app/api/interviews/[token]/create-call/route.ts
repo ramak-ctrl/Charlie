@@ -120,6 +120,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       bot_url: botUrl,
       config: {
         interview_id: interview.id,
+        candidate_name: candidate.name,
         system_prompt: systemPrompt,
         transcript_webhook_url: `${appUrl}/api/interviews/transcript/${interview.id}`,
         webhook_secret: await getSetting("BOT_WEBHOOK_SECRET"),
