@@ -42,20 +42,23 @@ export default function SendInviteModal({ jobId, jobTitle, jobCoverage }: Props)
   const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState<{ name: string; email: string }[]>([]);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [searching, setSearching] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
+  // Fetch matches (or recent candidates when the query is empty) whenever the
+  // dropdown is open.
   useEffect(() => {
-    if (!query.trim()) { setSearchResults([]); return; }
+    if (!searchOpen) return;
+    setSearching(true);
     const t = setTimeout(async () => {
       try {
         const res = await fetch(`/api/candidates/search?q=${encodeURIComponent(query.trim())}`);
         const data = await res.json();
         setSearchResults(data.results ?? []);
-        setSearchOpen(true);
-      } catch { /* ignore */ }
-    }, 250);
+      } catch { /* ignore */ } finally { setSearching(false); }
+    }, 200);
     return () => clearTimeout(t);
-  }, [query]);
+  }, [query, searchOpen]);
 
   useEffect(() => {
     const h = (e: MouseEvent) => { if (searchRef.current && !searchRef.current.contains(e.target as Node)) setSearchOpen(false); };
@@ -150,7 +153,7 @@ export default function SendInviteModal({ jobId, jobTitle, jobCoverage }: Props)
       </Button>
 
       <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Invite Candidates</DialogTitle>
             <DialogDescription>
@@ -213,31 +216,49 @@ export default function SendInviteModal({ jobId, jobTitle, jobCoverage }: Props)
                   <input
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    onFocus={() => query && setSearchOpen(true)}
-                    placeholder="Search existing candidates by name or email…"
+                    onFocus={() => setSearchOpen(true)}
+                    placeholder="Search candidates to add…"
                     className="flex-1 py-2.5 text-sm bg-transparent outline-none text-[#1C3829] placeholder:text-[#7A9E8E]/70"
                     aria-label="Search existing candidates"
                   />
                 </div>
-                {searchOpen && searchResults.length > 0 && (
-                  <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-50 rounded-lg border border-[#1C3829]/12 bg-white shadow-lg max-h-56 overflow-y-auto py-1">
-                    {searchResults.map((r) => (
-                      <button
-                        key={r.email}
-                        type="button"
-                        onClick={() => addFromSearch(r)}
-                        className="flex w-full flex-col items-start px-3 py-2 text-left hover:bg-[#B8E04A]/10"
-                      >
-                        <span className="text-sm font-medium text-[#1C3829]">{r.name}</span>
-                        <span className="text-xs text-[#7A9E8E]">{r.email}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
+                {searchOpen && (() => {
+                  const added = new Set(candidates.map((c) => c.email.toLowerCase()));
+                  const available = searchResults.filter((r) => !added.has(r.email.toLowerCase()));
+                  return (
+                    <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-50 rounded-lg border border-[#1C3829]/12 bg-white shadow-lg max-h-60 overflow-y-auto py-1">
+                      {searching ? (
+                        <div className="px-3 py-3 text-sm text-[#7A9E8E]">Searching…</div>
+                      ) : available.length > 0 ? (
+                        available.map((r) => (
+                          <button
+                            key={r.email}
+                            type="button"
+                            onClick={() => addFromSearch(r)}
+                            className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-[#B8E04A]/10"
+                          >
+                            <span className="min-w-0">
+                              <span className="block text-sm font-medium text-[#1C3829] truncate">{r.name}</span>
+                              <span className="block text-xs text-[#7A9E8E] truncate">{r.email}</span>
+                            </span>
+                            <Plus className="h-4 w-4 text-[#3D6B54] shrink-0" />
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-3 py-3 text-sm text-[#7A9E8E]">
+                          {query.trim() ? "No matching candidates — add manually below." : "No saved candidates yet — add manually below."}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
 
-              {/* Manual rows */}
+              {/* Rows — one per candidate */}
               <div className="space-y-3">
+                <p className="text-xs font-semibold text-[#1C3829] px-1">
+                  Candidates to invite ({candidates.filter((c) => c.name || c.email).length})
+                </p>
                 <div className="grid grid-cols-[1fr_1fr_130px_32px] gap-2 text-xs text-gray-500 font-medium px-1">
                   <span>Name *</span><span>Email *</span><span>Phone</span><span></span>
                 </div>
