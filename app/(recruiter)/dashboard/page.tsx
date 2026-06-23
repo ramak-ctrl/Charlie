@@ -56,10 +56,10 @@ export default async function DashboardPage() {
 
       {/* ── Stat cards ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 24 }}>
-        <StatCard label="Total Jobs"           value={allJobs.length} icon={Briefcase}    accent="#6366F1" />
+        <StatCard label="Total Jobs"           value={allJobs.length} icon={Briefcase}    accent="#3D6B54" />
         <StatCard label="Active Jobs"          value={activeJobs}      icon={TrendingUp}   accent="#10B981" />
-        <StatCard label="Total Candidates"     value={totalCandidates} icon={Users}        accent="#3B82F6" />
-        <StatCard label="Completed Interviews" value={completedCount}  icon={CheckCircle2} accent="#8B5CF6" />
+        <StatCard label="Total Candidates"     value={totalCandidates} icon={Users}        accent="#0EA5A4" />
+        <StatCard label="Completed Interviews" value={completedCount}  icon={CheckCircle2} accent="#0E7490" />
       </div>
 
       {/* ── Quick actions ── */}
@@ -129,7 +129,7 @@ export default async function DashboardPage() {
                     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                       <span style={{ fontSize: 13.5, fontWeight: 600, color: C.dark }}>{job.title}</span>
                       {job.client && <span style={{ fontSize: 11, color: C.muted, fontWeight: 500 }}>{job.client}</span>}
-                      {job.category && <span style={{ fontSize: 11, color: "#6366F1", background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.15)", borderRadius: 99, padding: "1px 7px", fontWeight: 600 }}>{job.category}</span>}
+                      {job.category && <span style={{ fontSize: 11, color: C.mid, background: "rgba(28,56,41,0.06)", border: `1px solid ${C.border}`, borderRadius: 99, padding: "1px 7px", fontWeight: 600 }}>{job.category}</span>}
                     </div>
                     <span style={{ fontSize: 11, color: C.muted, marginTop: 2, display: "block" }}>{formatDate(job.created_at)}</span>
                   </div>
@@ -154,9 +154,9 @@ export default async function DashboardPage() {
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {[
-                { label: "Total candidates",      value: totalCandidates, max: Math.max(totalCandidates, 1), color: "#3B82F6" },
+                { label: "Total candidates",      value: totalCandidates, max: Math.max(totalCandidates, 1), color: "#0EA5A4" },
                 { label: "Completed interviews",  value: completedCount,  max: Math.max(totalCandidates, 1), color: "#10B981" },
-                { label: "Active jobs",           value: activeJobs,      max: Math.max(allJobs.length, 1),  color: "#6366F1" },
+                { label: "Active jobs",           value: activeJobs,      max: Math.max(allJobs.length, 1),  color: "#3D6B54" },
               ].map(r => (
                 <div key={r.label}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
