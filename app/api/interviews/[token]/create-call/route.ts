@@ -111,6 +111,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         webhook_secret: await getSetting("BOT_WEBHOOK_SECRET"),
         // Let the admin-configured Groq key drive the bot (bot.py prefers config key).
         groq_api_key: await getSetting("GROQ_API_KEY"),
+        // TTS provider + Deepgram key (bot prefers Deepgram when a key is present).
+        tts_provider: await getSetting("TTS_PROVIDER"),
+        deepgram_api_key: await getSetting("DEEPGRAM_API_KEY"),
+        // Interviewer model (blank = bot default, llama-3.3-70b-versatile).
+        llm_model: await getSetting("GROQ_LLM_MODEL"),
       },
     });
   }

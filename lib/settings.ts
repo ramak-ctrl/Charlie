@@ -19,6 +19,9 @@ export const EDITABLE_SETTINGS: SettingDef[] = [
   { key: "VOICE_PROVIDER", label: "Voice provider", group: "Voice agent", secret: false, placeholder: "pipecat | retell", help: "Which voice agent runs interviews." },
   { key: "TOM_BOT_URL", label: "Voice bot URL", group: "Voice agent", secret: false, placeholder: "http://localhost:7860", help: "URL of the Groq/Pipecat bot (used when provider = pipecat)." },
   { key: "BOT_WEBHOOK_SECRET", label: "Bot webhook secret", group: "Voice agent", secret: true, help: "Shared secret the bot sends when posting transcripts back." },
+  { key: "TTS_PROVIDER", label: "TTS provider", group: "Voice agent", secret: false, placeholder: "deepgram | groq", help: "Text-to-speech engine for the bot. Defaults to Deepgram when a Deepgram key is set." },
+  { key: "DEEPGRAM_API_KEY", label: "Deepgram API key", group: "Voice agent", secret: true, placeholder: "Token ...", help: "Deepgram Aura TTS — far higher quota than Groq's free TTS. Get one at deepgram.com." },
+  { key: "GROQ_LLM_MODEL", label: "Interviewer model", group: "Voice agent", secret: false, placeholder: "llama-3.3-70b-versatile | llama-3.1-8b-instant", help: "Groq model the live interviewer uses. Blank = 70b (quality). Use 8b for lower latency / unlimited request count." },
 
   // AI analysis
   { key: "ANALYSIS_PROVIDER", label: "Analysis provider", group: "AI analysis", secret: false, placeholder: "anthropic | groq | ollama" },

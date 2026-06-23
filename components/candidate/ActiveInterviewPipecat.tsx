@@ -34,6 +34,7 @@ function Inner({ botUrl, config, candidateName, jobTitle, onCallEnded }: Props) 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const endedRef = useRef(false);
   const startedRef = useRef(false);
+  const wasLiveRef = useRef(false);
 
   const isLive = transportState === "connected" || transportState === "ready";
 
@@ -46,43 +47,49 @@ function Inner({ botUrl, config, candidateName, jobTitle, onCallEnded }: Props) 
     if (startedRef.current || !client) return;
     startedRef.current = true;
 
-    let active = true;
+    // NOTE: no "active" abort flag here. Under React StrictMode the component is
+    // mounted → unmounted → remounted; an abort flag would cancel the only connect
+    // attempt. The startedRef guard above already ensures we connect exactly once.
     (async () => {
       // Pre-request mic so the stream is ready before WebRTC publishes.
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         stream.getTracks().forEach((t) => t.stop());
-      } catch {
-        if (active) setError("Microphone access denied. Please allow microphone access and refresh.");
+      } catch (e) {
+        console.error("Microphone error:", e);
+        setError("Microphone access denied. Please allow microphone access and refresh.");
         return;
       }
-      if (!active) return;
       try {
         await client.startBotAndConnect({
           endpoint: `${botUrl}/start`,
           requestData: { body: config },
         });
-      } catch {
-        if (active) setError("Failed to connect. Please check your connection and try again.");
+      } catch (e) {
+        console.error("Voice connect error:", e);
+        setError("Failed to connect. Please check your connection and try again.");
       }
     })();
-
-    return () => {
-      active = false;
-    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [client]);
 
   // Drive status + timer off transport state
   useEffect(() => {
     if (isLive) {
+      wasLiveRef.current = true;
       if (agentStatus === "connecting") setAgentStatus("listening");
       if (!timerRef.current) {
         timerRef.current = setInterval(() => setElapsedSecs((s) => s + 1), 1000);
       }
+      return;
     }
-    if ((transportState === "disconnected" || transportState === "error") && startedRef.current) {
+    // Only treat a drop as "interview over" once we've actually connected — the
+    // transport starts in "disconnected", so don't end on the initial state.
+    if (transportState === "disconnected" && wasLiveRef.current) {
       endCall();
+    } else if (transportState === "error") {
+      if (wasLiveRef.current) endCall();
+      else setError("Failed to connect. Please check your microphone and try again.");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transportState]);
