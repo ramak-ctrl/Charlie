@@ -122,8 +122,13 @@ async function sendViaSMTP(params: {
     secure: process.env.SMTP_SECURE === "true",
     auth: {
       user: process.env.SMTP_USER!,
-      pass: process.env.SMTP_PASS!,
+      // Gmail app passwords are shown with spaces — strip them.
+      pass: (process.env.SMTP_PASS ?? "").replace(/\s+/g, ""),
     },
+    // Never let a slow/blocked SMTP server hang the request.
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
   });
   await transporter.sendMail({
     from:    `"Charlie Interviews" <${params.fromEmail}>`,
