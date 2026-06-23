@@ -73,17 +73,19 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ in
   try {
     const { data: fullInterview } = await serviceClient
       .from("interviews")
-      .select("*, jobs(title, key_skills, role_criteria, screening_questions(*))")
+      .select("*, jobs(title, key_skills, screening_questions(*))")
       .eq("id", interviewId)
       .single();
 
-    const jobData = (fullInterview!.jobs as { title: string; key_skills: string[]; role_criteria: string[]; screening_questions: ScreeningQuestion[] });
+    const jobData = (fullInterview!.jobs as { title: string; key_skills: string[]; role_criteria?: string[]; screening_questions: ScreeningQuestion[] });
     const result = await analyzeInterview({
       transcript: transcriptObject as { role: "agent" | "user"; content: string }[],
       job: { title: jobData.title, key_skills: jobData.key_skills, role_criteria: jobData.role_criteria ?? [] },
       screeningQuestions: jobData.screening_questions ?? [],
     });
-    await serviceClient.from("evaluations").insert({ interview_id: interviewId, ...result });
+    const evalRow: Record<string, unknown> = { ...result };
+    delete evalRow.criteria_results; // requires migration 004
+    await serviceClient.from("evaluations").insert({ interview_id: interviewId, ...evalRow });
     return NextResponse.json({ synced: true, analyzed: true });
   } catch (err) {
     console.error("[sync] analysis failed:", err);

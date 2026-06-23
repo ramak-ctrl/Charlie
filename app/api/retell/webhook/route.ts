@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     // Run analysis directly — avoids depending on NEXT_PUBLIC_APP_URL being correct
     const { data: fullInterview } = await supabase
       .from("interviews")
-      .select("*, jobs(title, key_skills, role_criteria, screening_questions(*))")
+      .select("*, jobs(title, key_skills, screening_questions(*))")
       .eq("id", interview.id)
       .single();
 
@@ -91,13 +91,15 @@ export async function POST(request: NextRequest) {
 
       if (!existing) {
         try {
-          const jobData = fullInterview.jobs as { title: string; key_skills: string[]; role_criteria: string[]; screening_questions: ScreeningQuestion[] };
+          const jobData = fullInterview.jobs as { title: string; key_skills: string[]; role_criteria?: string[]; screening_questions: ScreeningQuestion[] };
           const result = await analyzeInterview({
             transcript: transcript as { role: "agent" | "user"; content: string }[],
             job: { title: jobData.title, key_skills: jobData.key_skills, role_criteria: jobData.role_criteria ?? [] },
             screeningQuestions: jobData.screening_questions ?? [],
           });
-          await supabase.from("evaluations").insert({ interview_id: interview.id, ...result });
+          const evalRow: Record<string, unknown> = { ...result };
+          delete evalRow.criteria_results; // requires migration 004
+          await supabase.from("evaluations").insert({ interview_id: interview.id, ...evalRow });
           console.log(`[webhook] analysis complete for interview=${interview.id}`);
         } catch (err) {
           console.error("[webhook] analysis failed:", err);

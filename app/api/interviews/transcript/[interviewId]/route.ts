@@ -61,26 +61,31 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   await supabase.from("candidates").update({ status: "completed" }).eq("id", interview.candidate_id);
 
   // Run analysis once there's enough conversation, and only if not already done.
+  let analysis: Record<string, unknown> = { analyzed: false, reason: "transcript too short" };
   if (transcript.length > 2) {
     const { data: existing } = await supabase
       .from("evaluations")
       .select("id")
       .eq("interview_id", interview.id)
-      .single();
+      .maybeSingle();
 
-    if (!existing) {
-      const { data: fullInterview } = await supabase
+    if (existing) {
+      analysis = { analyzed: true, reason: "already analyzed" };
+    } else {
+      const { data: fullInterview, error: fiErr } = await supabase
         .from("interviews")
-        .select("*, jobs(title, key_skills, role_criteria, screening_questions(*))")
+        .select("*, jobs(title, key_skills, screening_questions(*))")
         .eq("id", interview.id)
         .single();
 
-      if (fullInterview) {
+      if (!fullInterview) {
+        analysis = { analyzed: false, reason: "interview/job fetch failed", detail: fiErr?.message };
+      } else {
         try {
           const jobData = fullInterview.jobs as {
             title: string;
             key_skills: string[];
-            role_criteria: string[];
+            role_criteria?: string[];
             screening_questions: ScreeningQuestion[];
           };
           const result = await analyzeInterview({
@@ -88,14 +93,25 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
             job: { title: jobData.title, key_skills: jobData.key_skills, role_criteria: jobData.role_criteria ?? [] },
             screeningQuestions: jobData.screening_questions ?? [],
           });
-          await supabase.from("evaluations").insert({ interview_id: interview.id, ...result });
-          console.log(`[transcript] analysis complete for interview=${interview.id}`);
+          // criteria_results requires migration 004; omit it so analysis works
+          // on databases that haven't applied it.
+          const evalRow: Record<string, unknown> = { ...result };
+          delete evalRow.criteria_results;
+          const { error: insErr } = await supabase
+            .from("evaluations")
+            .insert({ interview_id: interview.id, ...evalRow });
+          if (insErr) {
+            analysis = { analyzed: false, reason: "evaluation insert failed", detail: insErr.message };
+          } else {
+            analysis = { analyzed: true };
+          }
         } catch (err) {
           console.error("[transcript] analysis failed:", err);
+          analysis = { analyzed: false, reason: "analysis threw", detail: err instanceof Error ? err.message : String(err) };
         }
       }
     }
   }
 
-  return NextResponse.json({ received: true });
+  return NextResponse.json({ received: true, ...analysis });
 }
