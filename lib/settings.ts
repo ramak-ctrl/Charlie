@@ -20,10 +20,12 @@ export const EDITABLE_SETTINGS: SettingDef[] = [
   // defaults and intentionally kept off this page.
   { key: "GROQ_API_KEY", label: "Groq API key", group: "API Keys", secret: true, placeholder: "gsk_...", help: "Powers the voice interviewer (LLM + speech-to-text). Get one at console.groq.com." },
   { key: "DEEPGRAM_API_KEY", label: "Deepgram API key", group: "API Keys", secret: true, placeholder: "Token ...", help: "Text-to-speech for the interviewer (Deepgram Aura). Get one at deepgram.com." },
-  { key: "ANTHROPIC_API_KEY", label: "Anthropic API key", group: "API Keys", secret: true, placeholder: "sk-ant-...", help: "Claude — analyzes interviews and generates reports. Optional (falls back to Groq)." },
+  { key: "GEMINI_API_KEY", label: "Gemini API key", group: "API Keys", secret: true, placeholder: "AIza...", help: "Google Gemini — free, high-quality interview analysis. Get one at aistudio.google.com." },
+  { key: "ANTHROPIC_API_KEY", label: "Anthropic API key", group: "API Keys", secret: true, placeholder: "sk-ant-...", help: "Claude — analyzes interviews. Optional; paid per use." },
   { key: "RESEND_API_KEY", label: "Resend API key", group: "API Keys", secret: true, placeholder: "re_...", help: "Sends candidate interview-invite emails. Optional." },
 
   // A couple of non-secret config fields.
+  { key: "ANALYSIS_PROVIDER", label: "Analysis provider", group: "Configuration", secret: false, placeholder: "gemini | groq | anthropic", help: "Which engine writes interview reports. Blank = auto (Gemini → Anthropic → Groq)." },
   { key: "EMAIL_FROM", label: "Invite from-address", group: "Configuration", secret: false, placeholder: "charlie@yourdomain.com", help: "From address for invite emails." },
   { key: "GROQ_LLM_MODEL", label: "Interviewer model", group: "Configuration", secret: false, placeholder: "llama-3.3-70b-versatile | llama-3.1-8b-instant", help: "Blank = 70b (quality). Use llama-3.1-8b-instant for lower latency." },
 ];

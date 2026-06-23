@@ -187,6 +187,34 @@ async function analyzeWithClaude(params: Parameters<typeof buildPrompts>[0], api
   return JSON.parse(extractJson(text));
 }
 
+async function analyzeWithGemini(params: Parameters<typeof buildPrompts>[0], apiKey: string) {
+  const { system, user } = buildPrompts(params);
+  const model = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: system }] },
+        contents: [{ role: "user", parts: [{ text: user }] }],
+        generationConfig: { response_mime_type: "application/json", temperature: 0.3 },
+      }),
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Gemini error ${res.status}: ${err}`);
+  }
+
+  const data = await res.json();
+  const parts: { text?: string }[] = data.candidates?.[0]?.content?.parts ?? [];
+  const text = parts.map((p) => p.text ?? "").join("");
+  return JSON.parse(extractJson(text));
+}
+
 export async function analyzeInterview(
   params: {
     transcript: TranscriptEntry[];
@@ -196,12 +224,15 @@ export async function analyzeInterview(
 ): Promise<Omit<Evaluation, "id" | "interview_id" | "recruiter_confirmed" | "recruiter_notes" | "created_at">> {
   const anthropicKey = await getSetting("ANTHROPIC_API_KEY");
   const groqKey = await getSetting("GROQ_API_KEY");
+  const geminiKey = await getSetting("GEMINI_API_KEY");
   const provider = (await getSetting("ANALYSIS_PROVIDER")) || (
+    geminiKey ? "gemini" :
     anthropicKey ? "anthropic" :
     groqKey ? "groq" :
     "ollama"
   );
 
+  if (provider === "gemini") return analyzeWithGemini(params, geminiKey);
   if (provider === "groq") return analyzeWithGroq(params, groqKey);
   if (provider === "ollama") return analyzeWithOllama(params);
   return analyzeWithClaude(params, anthropicKey);
