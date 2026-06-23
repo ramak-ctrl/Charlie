@@ -44,10 +44,26 @@ METERED_API_KEY = os.getenv("METERED_API_KEY", "")
 METERED_APP_DOMAIN = os.getenv("METERED_APP_DOMAIN", "tom-interviews.metered.live")
 CLOUDFLARE_TURN_KEY_ID = os.getenv("CLOUDFLARE_TURN_KEY_ID", "")
 CLOUDFLARE_TURN_API_TOKEN = os.getenv("CLOUDFLARE_TURN_API_TOKEN", "")
+# Generic static TURN (works with any provider: ExpressTURN, Metered static, coturn…)
+# TURN_URLS = comma-separated, e.g. "turn:relay1.expressturn.com:3480,turns:relay1.expressturn.com:5349?transport=tcp"
+TURN_URLS = os.getenv("TURN_URLS", "")
+TURN_USERNAME = os.getenv("TURN_USERNAME", "")
+TURN_CREDENTIAL = os.getenv("TURN_CREDENTIAL", "")
 
 CLOSING_PREFIX = "CLOSING:"
 
 # ── ICE servers ───────────────────────────────────────────────────────────────
+
+def _static_turn_servers() -> list[IceServer]:
+    """Static TURN creds from env (any provider) + Google STUN."""
+    servers = [IceServer(urls="stun:stun.l.google.com:19302")]
+    for u in [x.strip() for x in TURN_URLS.split(",") if x.strip()]:
+        if u.startswith("stun:"):
+            servers.append(IceServer(urls=u))
+        else:
+            servers.append(IceServer(urls=u, username=TURN_USERNAME, credential=TURN_CREDENTIAL))
+    return servers
+
 
 def _fallback_ice_servers() -> list[IceServer]:
     """Free public STUN + Open Relay TURN (best effort)."""
@@ -108,7 +124,11 @@ async def _fetch_metered_ice() -> list[IceServer]:
 
 
 async def fetch_metered_ice_servers() -> list[IceServer]:
-    """Resolve TURN/ICE servers: Cloudflare → Metered → free fallback."""
+    """Resolve TURN/ICE servers: static env → Cloudflare → Metered → free fallback."""
+    if TURN_URLS and TURN_USERNAME and TURN_CREDENTIAL:
+        servers = _static_turn_servers()
+        logger.info(f"Using {len(servers)} static TURN/ICE servers from env")
+        return servers
     if CLOUDFLARE_TURN_KEY_ID and CLOUDFLARE_TURN_API_TOKEN:
         try:
             servers = await _fetch_cloudflare_ice()
