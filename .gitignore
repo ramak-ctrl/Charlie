@@ -33,3 +33,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Python voice bot
+voice-bot/.venv/
+voice-bot/__pycache__/
+voice-bot/uv.lock
+*.pyc

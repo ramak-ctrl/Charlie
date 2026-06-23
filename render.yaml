@@ -1,29 +1,31 @@
-# Render Blueprint for the Charlie web app (Next.js).
-# Deploy the voice bot separately from the bot repo (ramak-ctrl/tom).
+# Render Blueprint — deploys BOTH the Charlie web app and the voice bot together.
+# One repo, one Blueprint: Render → New → Blueprint → pick this repo.
 services:
+  # ── Charlie web app (Next.js) ────────────────────────────────────────────────
   - type: web
     name: charlie
     runtime: node
-    plan: starter            # free tier works for testing; starter avoids cold-start sleeps
+    plan: starter
     buildCommand: npm install && npm run build
     startCommand: npm run start
     healthCheckPath: /
     envVars:
-      # ── Supabase (required; read directly at runtime + build) ──
       - key: NEXT_PUBLIC_SUPABASE_URL
         sync: false
       - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
-      # ── App + voice wiring ──
-      - key: NEXT_PUBLIC_APP_URL
-        sync: false          # set to this service's public URL, e.g. https://charlie.onrender.com
       - key: VOICE_PROVIDER
         value: pipecat
+      # Full https URL of the voice bot service, e.g. https://charlie-voice-bot.onrender.com
       - key: NEXT_PUBLIC_TOM_BOT_URL
-        sync: false          # the deployed voice bot URL, e.g. https://charlie-voice-bot.onrender.com
-      # ── API keys (optional here — can be managed in-app via Admin Settings instead) ──
+        sync: false
+      # This app's own full https URL (the bot posts transcripts back here),
+      # e.g. https://charlie.onrender.com
+      - key: NEXT_PUBLIC_APP_URL
+        sync: false
+      # API keys — optional here; can be managed in-app via Admin Settings.
       - key: GROQ_API_KEY
         sync: false
       - key: ANTHROPIC_API_KEY
@@ -33,4 +35,26 @@ services:
       - key: RESEND_API_KEY
         sync: false
       - key: EMAIL_FROM
+        sync: false
+
+  # ── Voice bot (Pipecat / WebRTC, Python) ─────────────────────────────────────
+  - type: web
+    name: charlie-voice-bot
+    runtime: python
+    rootDir: voice-bot
+    plan: starter
+    buildCommand: pip install uv && uv sync
+    startCommand: uv run python bot.py
+    healthCheckPath: /client/
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      # TURN servers — REQUIRED for remote candidates (https://www.metered.ca/)
+      - key: METERED_API_KEY
+        sync: false
+      - key: METERED_APP_DOMAIN
+        sync: false
+      - key: DEEPGRAM_VOICE
+        sync: false
+      - key: GROQ_LLM_MODEL
         sync: false
