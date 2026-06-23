@@ -33,7 +33,7 @@ export default function ConsentScreen({ candidateName, jobTitle, companyIntro: _
   }
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#030712", overflowY: "auto" }}>
+    <div style={{ minHeight: "100vh", backgroundColor: "#0B1711", overflowY: "auto" }}>
       <div style={{ maxWidth: "480px", margin: "0 auto", padding: "48px 16px 64px" }}>
 
         {/* Logo */}
@@ -41,18 +41,18 @@ export default function ConsentScreen({ candidateName, jobTitle, companyIntro: _
           <div style={{
             display: "inline-flex", alignItems: "center", justifyContent: "center",
             width: "56px", height: "56px", borderRadius: "14px",
-            backgroundColor: "#4f46e5", marginBottom: "12px",
+            backgroundColor: "#B8E04A", marginBottom: "12px",
           }}>
-            <span style={{ color: "white", fontWeight: 700, fontSize: "22px" }}>C</span>
+            <span style={{ color: "#0B1711", fontWeight: 800, fontSize: "24px" }}>C</span>
           </div>
-          <h1 style={{ color: "white", fontWeight: 700, fontSize: "22px", margin: 0 }}>Charlie</h1>
-          <p style={{ color: "#9ca3af", fontSize: "13px", marginTop: "4px" }}>AI Screening Interview</p>
+          <h1 style={{ color: "white", fontWeight: 800, fontSize: "26px", margin: 0, letterSpacing: "-0.5px" }}>Charlie</h1>
+          <p style={{ color: "#8FA89A", fontSize: "13px", marginTop: "4px" }}>AI Screening Interview</p>
         </div>
 
         {/* Card */}
         <div style={{
-          backgroundColor: "#111827", borderRadius: "16px",
-          border: "1px solid #1f2937", padding: "28px 28px 24px",
+          backgroundColor: "#11231A", borderRadius: "16px",
+          border: "1px solid #1E3A2B", padding: "28px 28px 24px",
         }}>
           <h2 style={{ color: "white", fontSize: "19px", fontWeight: 600, margin: "0 0 4px" }}>
             Hi {candidateName}
@@ -75,12 +75,12 @@ export default function ConsentScreen({ candidateName, jobTitle, companyIntro: _
             ].map(({ icon: Icon, text }) => (
               <div key={text} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
                 <div style={{
-                  width: "30px", height: "30px", borderRadius: "8px", backgroundColor: "#1f2937",
+                  width: "30px", height: "30px", borderRadius: "8px", backgroundColor: "#1A2E22",
                   display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
                 }}>
-                  <Icon size={14} color="#9ca3af" />
+                  <Icon size={14} color="#B8E04A" />
                 </div>
-                <span style={{ color: "#d1d5db", fontSize: "14px" }}>{text}</span>
+                <span style={{ color: "#D6E4DC", fontSize: "14px" }}>{text}</span>
               </div>
             ))}
           </div>
@@ -92,7 +92,7 @@ export default function ConsentScreen({ candidateName, jobTitle, companyIntro: _
               id="consent-cb"
               type="checkbox"
               onChange={() => setShowError(false)}
-              style={{ marginTop: "3px", width: "17px", height: "17px", flexShrink: 0, cursor: "pointer", accentColor: "#4f46e5" }}
+              style={{ marginTop: "3px", width: "17px", height: "17px", flexShrink: 0, cursor: "pointer", accentColor: "#B8E04A" }}
             />
             <label htmlFor="consent-cb" style={{ color: "#9ca3af", fontSize: "13px", lineHeight: "1.55", cursor: "pointer" }}>
               I understand this interview is conducted by an AI agent and that my voice responses will be recorded, transcribed, and analyzed. I consent to proceed.
@@ -117,8 +117,8 @@ export default function ConsentScreen({ candidateName, jobTitle, companyIntro: _
               disabled={starting}
               style={{
                 width: "100%", height: "48px", borderRadius: "10px", border: "none",
-                backgroundColor: starting ? "#374151" : "#4f46e5",
-                color: "white", fontSize: "15px", fontWeight: 600,
+                backgroundColor: starting ? "#2A3F33" : "#B8E04A",
+                color: starting ? "#8FA89A" : "#0B1711", fontSize: "15px", fontWeight: 700,
                 cursor: starting ? "not-allowed" : "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
                 transition: "background-color 0.15s",

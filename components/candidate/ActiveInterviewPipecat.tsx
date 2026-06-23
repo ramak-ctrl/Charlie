@@ -120,12 +120,12 @@ function Inner({ botUrl, config, candidateName, jobTitle, onCallEnded }: Props) 
   const secs = (elapsedSecs % 60).toString().padStart(2, "0");
 
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-[#0B1711] flex flex-col items-center justify-center p-4">
       <PipecatClientAudio />
       <div className="w-full max-w-sm text-center">
         {/* Header */}
         <div className="mb-10">
-          <p className="text-gray-500 text-sm">{jobTitle}</p>
+          <p className="text-[#8FA89A] text-sm">{jobTitle}</p>
           <p className="text-white font-medium mt-0.5">{candidateName}</p>
         </div>
 
@@ -133,14 +133,14 @@ function Inner({ botUrl, config, candidateName, jobTitle, onCallEnded }: Props) 
         <div className="relative inline-flex items-center justify-center mb-10">
           {agentStatus === "speaking" && (
             <>
-              <div className="absolute inset-0 rounded-full bg-indigo-600/20 animate-pulse-ring" />
-              <div className="absolute inset-0 rounded-full bg-indigo-600/10 animate-pulse-ring [animation-delay:0.5s]" />
+              <div className="absolute inset-0 rounded-full bg-emerald-500/20 animate-pulse-ring" />
+              <div className="absolute inset-0 rounded-full bg-emerald-500/10 animate-pulse-ring [animation-delay:0.5s]" />
             </>
           )}
           <div className={`w-28 h-28 rounded-full flex items-center justify-center transition-all duration-300 ${
-            agentStatus === "speaking" ? "bg-indigo-600 scale-110" :
-            agentStatus === "listening" ? "bg-gray-800" :
-            "bg-gray-900"
+            agentStatus === "speaking" ? "bg-emerald-500 scale-110" :
+            agentStatus === "listening" ? "bg-[#1A2E22]" :
+            "bg-[#11231A]"
           }`}>
             <span className="text-4xl font-bold text-white">C</span>
           </div>
@@ -157,10 +157,10 @@ function Inner({ botUrl, config, candidateName, jobTitle, onCallEnded }: Props) 
         </div>
 
         {/* Timer */}
-        <p className="text-gray-500 text-sm font-mono mb-12">{mins}:{secs}</p>
+        <p className="text-[#8FA89A] text-sm font-mono mb-12">{mins}:{secs}</p>
 
         {error && (
-          <div className="mb-6 text-rose-400 text-sm bg-rose-900/20 border border-rose-800 rounded-xl px-4 py-3">
+          <div className="mb-6 text-rose-300 text-sm bg-rose-900/20 border border-rose-800/60 rounded-xl px-4 py-3">
             {error}
           </div>
         )}
@@ -172,7 +172,7 @@ function Inner({ botUrl, config, candidateName, jobTitle, onCallEnded }: Props) 
             aria-label={!isMicEnabled ? "Unmute microphone" : "Mute microphone"}
             aria-pressed={!isMicEnabled}
             className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
-              !isMicEnabled ? "bg-rose-800 text-rose-200" : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+              !isMicEnabled ? "bg-rose-800 text-rose-200" : "bg-[#1A2E22] text-[#D6E4DC] hover:bg-[#234032]"
             }`}
           >
             {!isMicEnabled ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
@@ -187,7 +187,7 @@ function Inner({ botUrl, config, candidateName, jobTitle, onCallEnded }: Props) 
           </button>
         </div>
 
-        <p className="text-gray-600 text-xs mt-8">
+        <p className="text-[#5E7A6C] text-xs mt-8">
           This interview is conducted by an AI agent and is being recorded.
         </p>
       </div>

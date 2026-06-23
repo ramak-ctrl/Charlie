@@ -41,8 +41,8 @@ export default async function InterviewPage({ params }: { params: Promise<{ toke
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#09090b", fontFamily: "'Inter', system-ui, sans-serif" }}>
-      <header style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", padding: "16px 32px" }}>
+    <div style={{ minHeight: "100vh", background: "#0B1711", fontFamily: "'Inter', system-ui, sans-serif" }}>
+      <header style={{ borderBottom: "1px solid rgba(184,224,74,0.12)", padding: "16px 32px" }}>
         <CharlieLogo size="sm" href="/" />
       </header>
       <InterviewRoom pageData={pageData} />

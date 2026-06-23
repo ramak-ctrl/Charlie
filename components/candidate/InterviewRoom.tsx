@@ -33,13 +33,13 @@ export default function InterviewRoom({ pageData }: { pageData: PageData }) {
 
   if (expired && phase !== "completed") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-950 text-white p-4">
+      <div className="min-h-screen flex items-center justify-center bg-[#0B1711] text-white p-4">
         <div className="max-w-md text-center">
           <div className="w-16 h-16 rounded-full bg-rose-900/30 flex items-center justify-center mx-auto mb-6">
             <span className="text-3xl">⏰</span>
           </div>
           <h1 className="text-2xl font-bold mb-3">Link Expired</h1>
-          <p className="text-gray-400">This interview link has expired. Please contact the recruiter for a new link.</p>
+          <p className="text-[#8FA89A]">This interview link has expired. Please contact the recruiter for a new link.</p>
         </div>
       </div>
     );
