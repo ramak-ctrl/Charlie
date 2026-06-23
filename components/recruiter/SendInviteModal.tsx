@@ -13,7 +13,6 @@ import { DEFAULT_COVERAGE } from "@/lib/voicePrompt";
 interface CandidateRow {
   name: string;
   email: string;
-  phone: string;
 }
 
 interface Props {
@@ -31,7 +30,7 @@ const COVERAGE_OPTIONS: { key: string; label: string }[] = [
 
 export default function SendInviteModal({ jobId, jobTitle, jobCoverage }: Props) {
   const [open, setOpen] = useState(false);
-  const [candidates, setCandidates] = useState<CandidateRow[]>([{ name: "", email: "", phone: "" }]);
+  const [candidates, setCandidates] = useState<CandidateRow[]>([{ name: "", email: "" }]);
   const [coverage, setCoverage] = useState<string[]>(jobCoverage?.length ? jobCoverage : DEFAULT_COVERAGE);
   const [sending, setSending] = useState(false);
   const [results, setResults] = useState<{ email: string; success: boolean; error?: string; interviewLink?: string; emailSent?: boolean; emailError?: string }[] | null>(null);
@@ -67,7 +66,7 @@ export default function SendInviteModal({ jobId, jobTitle, jobCoverage }: Props)
   }, []);
 
   function addRow() {
-    setCandidates([...candidates, { name: "", email: "", phone: "" }]);
+    setCandidates([...candidates, { name: "", email: "" }]);
   }
 
   function addFromSearch(r: { name: string; email: string }) {
@@ -76,8 +75,8 @@ export default function SendInviteModal({ jobId, jobTitle, jobCoverage }: Props)
       // Fill the first empty row, else append.
       const emptyIdx = rows.findIndex((c) => !c.name && !c.email);
       const next = [...rows];
-      if (emptyIdx >= 0) next[emptyIdx] = { name: r.name, email: r.email, phone: "" };
-      else next.push({ name: r.name, email: r.email, phone: "" });
+      if (emptyIdx >= 0) next[emptyIdx] = { name: r.name, email: r.email };
+      else next.push({ name: r.name, email: r.email });
       return next;
     });
     setQuery("");
@@ -104,7 +103,7 @@ export default function SendInviteModal({ jobId, jobTitle, jobCoverage }: Props)
     e.preventDefault();
     const parsed = lines.map((line) => {
       const parts = line.split(/[\t,]/).map((s) => s.trim());
-      return { name: parts[0] ?? "", email: parts[1] ?? "", phone: parts[2] ?? "" };
+      return { name: parts[0] ?? "", email: parts[1] ?? "" };
     });
     setCandidates(parsed);
   }
@@ -136,7 +135,7 @@ export default function SendInviteModal({ jobId, jobTitle, jobCoverage }: Props)
   function handleClose() {
     setOpen(false);
     setTimeout(() => {
-      setCandidates([{ name: "", email: "", phone: "" }]);
+      setCandidates([{ name: "", email: "" }]);
       setCoverage(jobCoverage?.length ? jobCoverage : DEFAULT_COVERAGE);
       setQuery("");
       setResults(null);
@@ -157,7 +156,7 @@ export default function SendInviteModal({ jobId, jobTitle, jobCoverage }: Props)
           <DialogHeader>
             <DialogTitle>Invite Candidates</DialogTitle>
             <DialogDescription>
-              Send interview links for <strong>{jobTitle}</strong>. Search existing candidates, paste a CSV (name, email, phone), or enter manually.
+              Send interview links for <strong>{jobTitle}</strong>.
             </DialogDescription>
           </DialogHeader>
 
@@ -209,81 +208,85 @@ export default function SendInviteModal({ jobId, jobTitle, jobCoverage }: Props)
             </div>
           ) : (
             <div className="space-y-4" onPaste={handlePaste}>
-              {/* Candidate search */}
-              <div ref={searchRef} className="relative">
-                <div className="flex items-center gap-2 rounded-lg border border-[#1C3829]/12 px-3 bg-white">
-                  <Search className="h-4 w-4 text-[#7A9E8E] shrink-0" />
-                  <input
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    onFocus={() => setSearchOpen(true)}
-                    placeholder="Search candidates to add…"
-                    className="flex-1 py-2.5 text-sm bg-transparent outline-none text-[#1C3829] placeholder:text-[#7A9E8E]/70"
-                    aria-label="Search existing candidates"
-                  />
+              {/* ── Section 1: Candidates ── */}
+              <section className="rounded-xl border border-[#1C3829]/12 p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-bold text-[#1C3829]">Candidates</h3>
+                  <span className="text-xs font-semibold text-[#7A9E8E]">
+                    {candidates.filter((c) => c.name || c.email).length} to invite
+                  </span>
                 </div>
-                {searchOpen && (() => {
-                  const added = new Set(candidates.map((c) => c.email.toLowerCase()));
-                  const available = searchResults.filter((r) => !added.has(r.email.toLowerCase()));
-                  return (
-                    <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-50 rounded-lg border border-[#1C3829]/12 bg-white shadow-lg max-h-60 overflow-y-auto py-1">
-                      {searching ? (
-                        <div className="px-3 py-3 text-sm text-[#7A9E8E]">Searching…</div>
-                      ) : available.length > 0 ? (
-                        available.map((r) => (
-                          <button
-                            key={r.email}
-                            type="button"
-                            onClick={() => addFromSearch(r)}
-                            className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-[#B8E04A]/10"
-                          >
-                            <span className="min-w-0">
-                              <span className="block text-sm font-medium text-[#1C3829] truncate">{r.name}</span>
-                              <span className="block text-xs text-[#7A9E8E] truncate">{r.email}</span>
-                            </span>
-                            <Plus className="h-4 w-4 text-[#3D6B54] shrink-0" />
-                          </button>
-                        ))
-                      ) : (
-                        <div className="px-3 py-3 text-sm text-[#7A9E8E]">
-                          {query.trim() ? "No matching candidates — add manually below." : "No saved candidates yet — add manually below."}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
-              </div>
 
-              {/* Rows — one per candidate */}
-              <div className="space-y-3">
-                <p className="text-xs font-semibold text-[#1C3829] px-1">
-                  Candidates to invite ({candidates.filter((c) => c.name || c.email).length})
-                </p>
-                <div className="grid grid-cols-[1fr_1fr_130px_32px] gap-2 text-xs text-gray-500 font-medium px-1">
-                  <span>Name *</span><span>Email *</span><span>Phone</span><span></span>
+                {/* Search */}
+                <div ref={searchRef} className="relative mb-3">
+                  <div className="flex items-center gap-2 rounded-lg border border-[#1C3829]/12 px-3 bg-white">
+                    <Search className="h-4 w-4 text-[#7A9E8E] shrink-0" />
+                    <input
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      onFocus={() => setSearchOpen(true)}
+                      placeholder="Search candidates to add…"
+                      className="flex-1 py-2.5 text-sm bg-transparent outline-none text-[#1C3829] placeholder:text-[#7A9E8E]/70"
+                      aria-label="Search existing candidates"
+                    />
+                  </div>
+                  {searchOpen && (() => {
+                    const added = new Set(candidates.map((c) => c.email.toLowerCase()));
+                    const available = searchResults.filter((r) => !added.has(r.email.toLowerCase()));
+                    return (
+                      <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-50 rounded-lg border border-[#1C3829]/12 bg-white shadow-lg max-h-60 overflow-y-auto py-1">
+                        {searching ? (
+                          <div className="px-3 py-3 text-sm text-[#7A9E8E]">Searching…</div>
+                        ) : available.length > 0 ? (
+                          available.map((r) => (
+                            <button
+                              key={r.email}
+                              type="button"
+                              onClick={() => addFromSearch(r)}
+                              className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-[#B8E04A]/10"
+                            >
+                              <span className="min-w-0">
+                                <span className="block text-sm font-medium text-[#1C3829] truncate">{r.name}</span>
+                                <span className="block text-xs text-[#7A9E8E] truncate">{r.email}</span>
+                              </span>
+                              <Plus className="h-4 w-4 text-[#3D6B54] shrink-0" />
+                            </button>
+                          ))
+                        ) : (
+                          <div className="px-3 py-3 text-sm text-[#7A9E8E]">
+                            {query.trim() ? "No matching candidates — add manually below." : "No saved candidates yet — add manually below."}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* Rows — one per candidate (name + email) */}
+                <div className="grid grid-cols-[1fr_1fr_32px] gap-2 text-xs text-[#7A9E8E] font-medium px-1 mb-1.5">
+                  <span>Name *</span><span>Email *</span><span></span>
                 </div>
                 <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                   {candidates.map((c, i) => (
-                    <div key={i} className="grid grid-cols-[1fr_1fr_130px_32px] gap-2 items-center">
+                    <div key={i} className="grid grid-cols-[1fr_1fr_32px] gap-2 items-center">
                       <Input value={c.name} onChange={(e) => updateRow(i, "name", e.target.value)} placeholder="Full name" aria-label={`Candidate ${i + 1} name`} />
                       <Input type="email" value={c.email} onChange={(e) => updateRow(i, "email", e.target.value)} placeholder="email@example.com" aria-label={`Candidate ${i + 1} email`} />
-                      <Input value={c.phone} onChange={(e) => updateRow(i, "phone", e.target.value)} placeholder="+91 ..." aria-label={`Candidate ${i + 1} phone`} />
                       <button type="button" onClick={() => removeRow(i)} disabled={candidates.length === 1} aria-label={`Remove candidate ${i + 1}`} className="text-gray-300 hover:text-rose-500 disabled:opacity-30 transition-colors">
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   ))}
                 </div>
-                <Button type="button" variant="ghost" size="sm" onClick={addRow} aria-label="Add another candidate">
+                <Button type="button" variant="ghost" size="sm" onClick={addRow} aria-label="Add another candidate" className="mt-2">
                   <Plus className="h-3.5 w-3.5 mr-1" />
                   Add row
                 </Button>
-              </div>
+              </section>
 
-              {/* Interview coverage */}
-              <div className="rounded-lg border border-[#1C3829]/12 p-3">
-                <p className="text-xs font-semibold text-[#1C3829] mb-1">Voice interview coverage</p>
-                <p className="text-xs text-[#7A9E8E] mb-2.5">What Charlie covers in these interviews.</p>
+              {/* ── Section 2: Voice interview coverage ── */}
+              <section className="rounded-xl border border-[#1C3829]/12 p-4">
+                <h3 className="text-sm font-bold text-[#1C3829] mb-1">Voice interview coverage</h3>
+                <p className="text-xs text-[#7A9E8E] mb-3">What Charlie covers in these interviews.</p>
                 <div className="grid grid-cols-2 gap-2">
                   {COVERAGE_OPTIONS.map((opt) => {
                     const checked = coverage.includes(opt.key);
@@ -295,7 +298,7 @@ export default function SendInviteModal({ jobId, jobTitle, jobCoverage }: Props)
                     );
                   })}
                 </div>
-              </div>
+              </section>
             </div>
           )}
 
