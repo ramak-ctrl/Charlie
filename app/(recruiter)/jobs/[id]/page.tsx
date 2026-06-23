@@ -114,7 +114,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
               Edit
             </Button>
           </Link>
-          <SendInviteModal jobId={id} jobTitle={job.title} />
+          <SendInviteModal jobId={id} jobTitle={job.title} jobCoverage={job.interview_coverage ?? undefined} />
         </div>
       </div>
 

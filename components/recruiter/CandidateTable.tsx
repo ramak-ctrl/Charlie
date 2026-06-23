@@ -113,6 +113,7 @@ export default function CandidateTable({ candidates, jobId, appUrl, candidateRan
               <th style={{ padding: "12px 14px", fontSize: 11, fontWeight: 700, color: MUTED, textTransform: "uppercase", letterSpacing: "0.08em", textAlign: "left" }}>Status</th>
               <th style={{ padding: "12px 14px", fontSize: 11, fontWeight: 700, color: MUTED, textTransform: "uppercase", letterSpacing: "0.08em", textAlign: "left" }}>Score</th>
               <th style={{ padding: "12px 14px", fontSize: 11, fontWeight: 700, color: MUTED, textTransform: "uppercase", letterSpacing: "0.08em", textAlign: "left" }}>Duration</th>
+              <th style={{ padding: "12px 14px", fontSize: 11, fontWeight: 700, color: MUTED, textTransform: "uppercase", letterSpacing: "0.08em", textAlign: "left" }}>Interview Link</th>
               <th style={{ padding: "12px 14px", fontSize: 11, fontWeight: 700, color: MUTED, textTransform: "uppercase", letterSpacing: "0.08em", textAlign: "right" }}>Actions</th>
             </tr>
           </thead>
@@ -187,6 +188,37 @@ export default function CandidateTable({ candidates, jobId, appUrl, candidateRan
                   {/* Duration */}
                   <td style={{ padding: "14px", color: MUTED, fontSize: 12, fontVariantNumeric: "tabular-nums" }}>
                     {formatDuration(interview?.duration_secs ?? null)}
+                  </td>
+
+                  {/* Interview Link */}
+                  <td style={{ padding: "14px" }}>
+                    {token && !isExpired && !token.used_at ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span
+                          style={{ fontSize: 12, color: MID, fontFamily: "monospace", maxWidth: 150, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                          title={`${appUrl}/interview/${token.token}`}
+                        >
+                          /interview/{token.token.slice(0, 8)}…
+                        </span>
+                        <button
+                          onClick={() => copyLink(token.token)}
+                          aria-label={`Copy interview link for ${c.name}`}
+                          style={{ padding: 4, borderRadius: 6, background: "none", border: "none", color: MUTED, cursor: "pointer" }}
+                          className="hover:text-foreground hover:bg-accent/40 transition-colors"
+                          title="Copy interview link"
+                        >
+                          {copied === token.token
+                            ? <CheckCircle2 style={{ width: 14, height: 14, color: "#059669" }} />
+                            : <Copy style={{ width: 14, height: 14 }} />}
+                        </button>
+                      </div>
+                    ) : token?.used_at ? (
+                      <span style={{ fontSize: 12, color: MUTED }}>Used</span>
+                    ) : isExpired ? (
+                      <span style={{ fontSize: 12, color: "#DC2626" }}>Expired</span>
+                    ) : (
+                      <span style={{ color: "rgba(28,56,41,0.2)", fontSize: 13 }}>—</span>
+                    )}
                   </td>
 
                   {/* Actions */}

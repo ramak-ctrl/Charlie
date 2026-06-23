@@ -88,11 +88,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     await supabase.from("interview_tokens").update({ used_at: new Date().toISOString() }).eq("id", tokenData.id);
     await supabase.from("candidates").update({ status: "started" }).eq("id", candidate.id);
 
-    // Resilient read of interview_coverage (column may not exist pre-migration 006).
+    // Coverage: per-link (token) override → job default → built-in default.
+    // Reads are resilient to the columns not existing yet (pre-migration 006/007).
     let coverage = DEFAULT_COVERAGE;
-    const { data: covRow } = await supabase.from("jobs").select("interview_coverage").eq("id", job.id).maybeSingle();
-    if (covRow?.interview_coverage && Array.isArray(covRow.interview_coverage) && covRow.interview_coverage.length) {
-      coverage = covRow.interview_coverage as string[];
+    const tokenCov = (tokenData as { interview_coverage?: string[] | null }).interview_coverage;
+    if (Array.isArray(tokenCov) && tokenCov.length) {
+      coverage = tokenCov;
+    } else {
+      const { data: covRow } = await supabase.from("jobs").select("interview_coverage").eq("id", job.id).maybeSingle();
+      if (covRow?.interview_coverage && Array.isArray(covRow.interview_coverage) && covRow.interview_coverage.length) {
+        coverage = covRow.interview_coverage as string[];
+      }
     }
 
     const systemPrompt = buildInterviewSystemPrompt({

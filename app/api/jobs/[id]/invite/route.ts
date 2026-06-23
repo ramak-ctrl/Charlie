@@ -10,6 +10,7 @@ const InviteSchema = z.object({
     email: z.string().email(),
     phone: z.string().optional(),
   })).min(1).max(50),
+  coverage: z.array(z.string()).optional(),
 });
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -57,6 +58,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       if (tokenError || !token) {
         results.push({ email: c.email, success: false, error: tokenError?.message });
         continue;
+      }
+
+      // Store per-link coverage separately so a missing column (pre-migration 007)
+      // can't break invites.
+      if (parsed.data.coverage && parsed.data.coverage.length) {
+        const { error: covErr } = await serviceClient
+          .from("interview_tokens")
+          .update({ interview_coverage: parsed.data.coverage })
+          .eq("id", token.id);
+        if (covErr) console.warn("[invite] coverage not saved (run migration 007):", covErr.message);
       }
 
       const interviewLink = `${appUrl}/interview/${token.token}`;

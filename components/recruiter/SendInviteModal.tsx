@@ -1,14 +1,14 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
-import { Send, Plus, Trash2, Loader2, CheckCircle2 } from "lucide-react";
+import { Send, Plus, Trash2, Loader2, CheckCircle2, Search } from "lucide-react";
+import { DEFAULT_COVERAGE } from "@/lib/voicePrompt";
 
 interface CandidateRow {
   name: string;
@@ -19,18 +19,66 @@ interface CandidateRow {
 interface Props {
   jobId: string;
   jobTitle: string;
+  jobCoverage?: string[];
 }
 
-export default function SendInviteModal({ jobId, jobTitle }: Props) {
+const COVERAGE_OPTIONS: { key: string; label: string }[] = [
+  { key: "screening_questions", label: "Screening Questions" },
+  { key: "technical", label: "Technical Screening" },
+  { key: "behavioural", label: "Behavioural Screening" },
+  { key: "company_briefing", label: "Briefing on the Company" },
+];
+
+export default function SendInviteModal({ jobId, jobTitle, jobCoverage }: Props) {
   const [open, setOpen] = useState(false);
   const [candidates, setCandidates] = useState<CandidateRow[]>([{ name: "", email: "", phone: "" }]);
+  const [coverage, setCoverage] = useState<string[]>(jobCoverage?.length ? jobCoverage : DEFAULT_COVERAGE);
   const [sending, setSending] = useState(false);
   const [results, setResults] = useState<{ email: string; success: boolean; error?: string; interviewLink?: string; emailSent?: boolean; emailError?: string }[] | null>(null);
   const { toast } = useToast();
   const router = useRouter();
 
+  // ── Candidate search (existing candidates) ──
+  const [query, setQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<{ name: string; email: string }[]>([]);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!query.trim()) { setSearchResults([]); return; }
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/candidates/search?q=${encodeURIComponent(query.trim())}`);
+        const data = await res.json();
+        setSearchResults(data.results ?? []);
+        setSearchOpen(true);
+      } catch { /* ignore */ }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  useEffect(() => {
+    const h = (e: MouseEvent) => { if (searchRef.current && !searchRef.current.contains(e.target as Node)) setSearchOpen(false); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+
   function addRow() {
     setCandidates([...candidates, { name: "", email: "", phone: "" }]);
+  }
+
+  function addFromSearch(r: { name: string; email: string }) {
+    setCandidates((rows) => {
+      if (rows.some((c) => c.email.toLowerCase() === r.email.toLowerCase())) return rows; // already added
+      // Fill the first empty row, else append.
+      const emptyIdx = rows.findIndex((c) => !c.name && !c.email);
+      const next = [...rows];
+      if (emptyIdx >= 0) next[emptyIdx] = { name: r.name, email: r.email, phone: "" };
+      else next.push({ name: r.name, email: r.email, phone: "" });
+      return next;
+    });
+    setQuery("");
+    setSearchOpen(false);
   }
 
   function updateRow(i: number, field: keyof CandidateRow, value: string) {
@@ -40,6 +88,10 @@ export default function SendInviteModal({ jobId, jobTitle }: Props) {
   function removeRow(i: number) {
     if (candidates.length === 1) return;
     setCandidates(candidates.filter((_, idx) => idx !== i));
+  }
+
+  function toggleCoverage(key: string) {
+    setCoverage((c) => (c.includes(key) ? c.filter((k) => k !== key) : [...c, key]));
   }
 
   function handlePaste(e: React.ClipboardEvent) {
@@ -66,7 +118,7 @@ export default function SendInviteModal({ jobId, jobTitle }: Props) {
       const res = await fetch(`/api/jobs/${jobId}/invite`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ candidates: valid }),
+        body: JSON.stringify({ candidates: valid, coverage }),
       });
       const data = await res.json();
       setResults(data.results);
@@ -82,6 +134,8 @@ export default function SendInviteModal({ jobId, jobTitle }: Props) {
     setOpen(false);
     setTimeout(() => {
       setCandidates([{ name: "", email: "", phone: "" }]);
+      setCoverage(jobCoverage?.length ? jobCoverage : DEFAULT_COVERAGE);
+      setQuery("");
       setResults(null);
     }, 300);
   }
@@ -100,7 +154,7 @@ export default function SendInviteModal({ jobId, jobTitle }: Props) {
           <DialogHeader>
             <DialogTitle>Invite Candidates</DialogTitle>
             <DialogDescription>
-              Send interview links for <strong>{jobTitle}</strong>. Paste a CSV (name, email, phone) or enter manually.
+              Send interview links for <strong>{jobTitle}</strong>. Search existing candidates, paste a CSV (name, email, phone), or enter manually.
             </DialogDescription>
           </DialogHeader>
 
@@ -120,16 +174,13 @@ export default function SendInviteModal({ jobId, jobTitle }: Props) {
                         r.emailSent ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" :
                         "text-amber-400 bg-amber-500/10 border-amber-500/20"
                       }`}>
-                        {r.success ? (r.emailSent ? "✓ Email sent" : "⚠ Email failed") : r.error ?? "Failed"}
+                        {r.success ? (r.emailSent ? "✓ Email sent" : "Link ready") : r.error ?? "Failed"}
                       </span>
                     </div>
                     {r.success && r.interviewLink && (
                       <div className="mt-1">
                         {!r.emailSent && (
-                          <p className="text-xs text-amber-400 mb-1.5">
-                            Email could not be sent — share this link manually:
-                            {r.emailError && <span className="block text-amber-300/70 mt-0.5 font-mono">{r.emailError}</span>}
-                          </p>
+                          <p className="text-xs text-amber-500 mb-1.5">Share this interview link with the candidate:</p>
                         )}
                         <div className="flex items-center gap-2">
                           <input
@@ -154,48 +205,76 @@ export default function SendInviteModal({ jobId, jobTitle }: Props) {
               </div>
             </div>
           ) : (
-            <div className="space-y-3" onPaste={handlePaste}>
-              <div className="grid grid-cols-[1fr_1fr_130px_32px] gap-2 text-xs text-gray-500 font-medium px-1">
-                <span>Name *</span><span>Email *</span><span>Phone</span><span></span>
-              </div>
-              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                {candidates.map((c, i) => (
-                  <div key={i} className="grid grid-cols-[1fr_1fr_130px_32px] gap-2 items-center">
-                    <Input
-                      value={c.name}
-                      onChange={(e) => updateRow(i, "name", e.target.value)}
-                      placeholder="Full name"
-                      aria-label={`Candidate ${i + 1} name`}
-                    />
-                    <Input
-                      type="email"
-                      value={c.email}
-                      onChange={(e) => updateRow(i, "email", e.target.value)}
-                      placeholder="email@example.com"
-                      aria-label={`Candidate ${i + 1} email`}
-                    />
-                    <Input
-                      value={c.phone}
-                      onChange={(e) => updateRow(i, "phone", e.target.value)}
-                      placeholder="+91 ..."
-                      aria-label={`Candidate ${i + 1} phone`}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeRow(i)}
-                      disabled={candidates.length === 1}
-                      aria-label={`Remove candidate ${i + 1}`}
-                      className="text-gray-300 hover:text-rose-500 disabled:opacity-30 transition-colors"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+            <div className="space-y-4" onPaste={handlePaste}>
+              {/* Candidate search */}
+              <div ref={searchRef} className="relative">
+                <div className="flex items-center gap-2 rounded-lg border border-[#1C3829]/12 px-3 bg-white">
+                  <Search className="h-4 w-4 text-[#7A9E8E] shrink-0" />
+                  <input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onFocus={() => query && setSearchOpen(true)}
+                    placeholder="Search existing candidates by name or email…"
+                    className="flex-1 py-2.5 text-sm bg-transparent outline-none text-[#1C3829] placeholder:text-[#7A9E8E]/70"
+                    aria-label="Search existing candidates"
+                  />
+                </div>
+                {searchOpen && searchResults.length > 0 && (
+                  <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-50 rounded-lg border border-[#1C3829]/12 bg-white shadow-lg max-h-56 overflow-y-auto py-1">
+                    {searchResults.map((r) => (
+                      <button
+                        key={r.email}
+                        type="button"
+                        onClick={() => addFromSearch(r)}
+                        className="flex w-full flex-col items-start px-3 py-2 text-left hover:bg-[#B8E04A]/10"
+                      >
+                        <span className="text-sm font-medium text-[#1C3829]">{r.name}</span>
+                        <span className="text-xs text-[#7A9E8E]">{r.email}</span>
+                      </button>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
-              <Button type="button" variant="ghost" size="sm" onClick={addRow} aria-label="Add another candidate">
-                <Plus className="h-3.5 w-3.5 mr-1" />
-                Add row
-              </Button>
+
+              {/* Manual rows */}
+              <div className="space-y-3">
+                <div className="grid grid-cols-[1fr_1fr_130px_32px] gap-2 text-xs text-gray-500 font-medium px-1">
+                  <span>Name *</span><span>Email *</span><span>Phone</span><span></span>
+                </div>
+                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                  {candidates.map((c, i) => (
+                    <div key={i} className="grid grid-cols-[1fr_1fr_130px_32px] gap-2 items-center">
+                      <Input value={c.name} onChange={(e) => updateRow(i, "name", e.target.value)} placeholder="Full name" aria-label={`Candidate ${i + 1} name`} />
+                      <Input type="email" value={c.email} onChange={(e) => updateRow(i, "email", e.target.value)} placeholder="email@example.com" aria-label={`Candidate ${i + 1} email`} />
+                      <Input value={c.phone} onChange={(e) => updateRow(i, "phone", e.target.value)} placeholder="+91 ..." aria-label={`Candidate ${i + 1} phone`} />
+                      <button type="button" onClick={() => removeRow(i)} disabled={candidates.length === 1} aria-label={`Remove candidate ${i + 1}`} className="text-gray-300 hover:text-rose-500 disabled:opacity-30 transition-colors">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <Button type="button" variant="ghost" size="sm" onClick={addRow} aria-label="Add another candidate">
+                  <Plus className="h-3.5 w-3.5 mr-1" />
+                  Add row
+                </Button>
+              </div>
+
+              {/* Interview coverage */}
+              <div className="rounded-lg border border-[#1C3829]/12 p-3">
+                <p className="text-xs font-semibold text-[#1C3829] mb-1">Voice interview coverage</p>
+                <p className="text-xs text-[#7A9E8E] mb-2.5">What Charlie covers in these interviews.</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {COVERAGE_OPTIONS.map((opt) => {
+                    const checked = coverage.includes(opt.key);
+                    return (
+                      <label key={opt.key} className={`flex items-center gap-2 rounded-md border px-2.5 py-2 cursor-pointer text-sm ${checked ? "border-[#3D6B54] bg-[#B8E04A]/10 text-[#1C3829]" : "border-[#1C3829]/12 text-[#3D6B54]"}`}>
+                        <input type="checkbox" checked={checked} onChange={() => toggleCoverage(opt.key)} className="h-4 w-4" style={{ accentColor: "#1C3829" }} />
+                        {opt.label}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           )}
 
