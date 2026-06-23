@@ -1,12 +1,12 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Plus } from "lucide-react";
 
 const DARK = "#1C3829";
 const MID = "#3D6B54";
 const MUTED = "#7A9E8E";
 const BORDER = "rgba(28,56,41,0.12)";
-const LIME = "#B8E04A";
 
 type Job = { id: string; title: string };
 
@@ -68,11 +68,15 @@ export default function AddCandidateButton({ jobs }: { jobs: Job[] }) {
       <button
         onClick={() => { reset(); setOpen(true); }}
         style={{
-          display: "inline-flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 700,
-          color: DARK, background: LIME, border: "none", borderRadius: 8, padding: "9px 16px", cursor: "pointer",
+          display: "inline-flex", alignItems: "center", gap: 8,
+          background: DARK, color: "#fff",
+          padding: "10px 20px", borderRadius: 100,
+          fontWeight: 600, fontSize: 13, border: "none", cursor: "pointer",
+          boxShadow: "0 4px 16px rgba(28,56,41,0.25)", flexShrink: 0,
         }}
       >
-        <span style={{ fontSize: 16, lineHeight: 1 }}>+</span> Add candidate
+        <Plus style={{ width: 14, height: 14 }} />
+        Add Candidate
       </button>
 
       {open && (
@@ -159,7 +163,7 @@ export default function AddCandidateButton({ jobs }: { jobs: Job[] }) {
 
                 <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 4 }}>
                   <button type="button" onClick={close} style={{ fontSize: 13, fontWeight: 600, color: MID, background: "#fff", border: `1px solid ${BORDER}`, borderRadius: 8, padding: "9px 16px", cursor: "pointer" }}>Cancel</button>
-                  <button type="submit" disabled={saving} style={{ fontSize: 13, fontWeight: 700, color: DARK, background: LIME, border: "none", borderRadius: 8, padding: "9px 18px", cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}>
+                  <button type="submit" disabled={saving} style={{ fontSize: 13, fontWeight: 700, color: "#fff", background: DARK, border: "none", borderRadius: 8, padding: "9px 18px", cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}>
                     {saving ? "Adding…" : "Add candidate"}
                   </button>
                 </div>
