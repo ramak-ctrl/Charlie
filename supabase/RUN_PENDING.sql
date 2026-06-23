@@ -21,7 +21,7 @@ ALTER TABLE app_settings ENABLE ROW LEVEL SECURITY;
 -- 006: per-job interview coverage (what the voice bot covers)
 ALTER TABLE jobs
   ADD COLUMN IF NOT EXISTS interview_coverage TEXT[]
-  DEFAULT '{screening_questions,behavioural,company_briefing}';
+  DEFAULT '{screening_questions,technical,behavioural,company_briefing}';
 
 -- 007: per-interview-link coverage override
 ALTER TABLE interview_tokens

@@ -67,7 +67,7 @@ const COVERAGE_OPTIONS: { key: string; label: string; desc: string }[] = [
   { key: "behavioural", label: "Behavioural Screening", desc: "STAR-style questions on teamwork, pressure, conflict." },
   { key: "company_briefing", label: "Briefing on the Company", desc: "Give a short intro about the company to the candidate." },
 ];
-const DEFAULT_COVERAGE = ["screening_questions", "behavioural", "company_briefing"];
+const DEFAULT_COVERAGE = ["screening_questions", "technical", "behavioural", "company_briefing"];
 
 export default function JobForm({ job, userFullName = "" }: Props) {
   const router = useRouter();

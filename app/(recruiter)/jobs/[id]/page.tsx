@@ -203,7 +203,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
           <div style={{ ...CARD, padding: 20 }}>
             <SectionHeader icon={Mic} title="Interview Coverage" />
             <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {(coverage.length ? coverage : ["screening_questions", "behavioural", "company_briefing"]).map((k) => (
+              {(coverage.length ? coverage : ["screening_questions", "technical", "behavioural", "company_briefing"]).map((k) => (
                 <span key={k} style={{ fontSize: 12, fontWeight: 600, padding: "3px 10px", borderRadius: 99, background: "rgba(28,56,41,0.06)", color: C.mid, border: `1px solid ${C.border}` }}>
                   {COVERAGE_LABELS[k] ?? k}
                 </span>

@@ -27,11 +27,8 @@ function buildInviteHtml(params: {
   <div style="max-width:560px;margin:40px auto;padding:0 16px 40px;">
 
     <!-- Header -->
-    <div style="background:#172F22;border-radius:16px 16px 0 0;padding:32px 36px;text-align:center;">
-      <div style="display:inline-flex;align-items:center;gap:8px;">
-        <span style="font-size:22px;font-weight:900;color:#fff;letter-spacing:-1px;">Charlie</span>
-        <span style="font-size:10px;font-weight:700;background:#B8E04A;color:#1C3829;border-radius:99px;padding:3px 10px;letter-spacing:0.08em;text-transform:uppercase;">AI Interviews</span>
-      </div>
+    <div style="background:#172F22;border-radius:16px 16px 0 0;padding:36px;text-align:center;">
+      <span style="font-size:36px;font-weight:900;color:#fff;letter-spacing:-1.5px;">Charlie</span>
     </div>
 
     <!-- Body -->

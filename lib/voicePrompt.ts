@@ -2,7 +2,7 @@
 // Charlie owns the interview content here (mirrors how the Retell agent was configured),
 // and passes the result to the bot via the call config.
 
-export const DEFAULT_COVERAGE = ["screening_questions", "behavioural", "company_briefing"];
+export const DEFAULT_COVERAGE = ["screening_questions", "technical", "behavioural", "company_briefing"];
 
 export function buildInterviewSystemPrompt(params: {
   candidateName: string;
