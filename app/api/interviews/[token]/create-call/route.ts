@@ -1,6 +1,8 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { buildInterviewSystemPrompt } from "@/lib/voicePrompt";
+import { getSetting } from "@/lib/settings";
 
 const BodySchema = z.object({
   consent_given: z.boolean(),
@@ -61,15 +63,68 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     .sort((a, b) => a.order_index - b.order_index)
     .map((q) => q.question);
 
+  const provider = (await getSetting("VOICE_PROVIDER")) || "retell";
+
+  // ── Pipecat / Groq voice agent (the Tom bot) ────────────────────────────────
+  if (provider === "pipecat") {
+    const { data: interview, error: interviewError } = await supabase
+      .from("interviews")
+      .insert({
+        token_id: tokenData.id,
+        candidate_id: candidate.id,
+        job_id: job.id,
+        status: "in_progress",
+        consent_given: true,
+        started_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (interviewError || !interview) {
+      console.error("Interview insert failed:", interviewError);
+      return NextResponse.json({ error: "Failed to create interview record" }, { status: 500 });
+    }
+
+    await supabase.from("interview_tokens").update({ used_at: new Date().toISOString() }).eq("id", tokenData.id);
+    await supabase.from("candidates").update({ status: "started" }).eq("id", candidate.id);
+
+    const systemPrompt = buildInterviewSystemPrompt({
+      candidateName: candidate.name,
+      jobTitle: job.title,
+      companyIntro: job.company_intro,
+      keySkills: job.key_skills ?? [],
+      screeningQuestions: screeningQs,
+    });
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const botUrl =
+      (await getSetting("TOM_BOT_URL", process.env.NEXT_PUBLIC_TOM_BOT_URL)) || "http://localhost:7860";
+
+    return NextResponse.json({
+      provider: "pipecat",
+      interview_id: interview.id,
+      bot_url: botUrl,
+      config: {
+        interview_id: interview.id,
+        system_prompt: systemPrompt,
+        transcript_webhook_url: `${appUrl}/api/interviews/transcript/${interview.id}`,
+        webhook_secret: await getSetting("BOT_WEBHOOK_SECRET"),
+        // Let the admin-configured Groq key drive the bot (bot.py prefers config key).
+        groq_api_key: await getSetting("GROQ_API_KEY"),
+      },
+    });
+  }
+
+  // ── Retell (default / fallback) ─────────────────────────────────────────────
   // Create Retell web call via direct REST (bypasses SDK version issues)
   const retellRes = await fetch("https://api.retellai.com/v2/create-web-call", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${process.env.RETELL_API_KEY}`,
+      "Authorization": `Bearer ${await getSetting("RETELL_API_KEY")}`,
     },
     body: JSON.stringify({
-      agent_id: process.env.RETELL_AGENT_ID,
+      agent_id: await getSetting("RETELL_AGENT_ID"),
       retell_llm_dynamic_variables: {
         candidate_name: candidate.name,
         job_title: job.title,

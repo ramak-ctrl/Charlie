@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
+import { getSettingsStatus } from "@/lib/settings";
+import ApiKeysSettings from "@/components/recruiter/ApiKeysSettings";
 
 const DARK   = "#1C3829";
 const MID    = "#3D6B54";
@@ -11,6 +13,9 @@ export default async function SettingsPage() {
 
   const { data: profile } = await supabase
     .from("profiles").select("*").eq("id", user!.id).single();
+
+  const isAdmin = profile?.role === "admin";
+  const settingsStatus = isAdmin ? await getSettingsStatus() : [];
 
   return (
     <div style={{ padding: "28px 32px", maxWidth: 860 }}>
@@ -44,6 +49,22 @@ export default async function SettingsPage() {
             ))}
           </div>
         </div>
+
+        {/* API Keys (admin only) */}
+        {isAdmin ? (
+          <ApiKeysSettings initialSettings={settingsStatus} />
+        ) : (
+          <div className="glass-card" style={{ overflow: "hidden" }}>
+            <div style={{ padding: "16px 24px", borderBottom: `1px solid ${BORDER}` }}>
+              <h2 style={{ fontSize: 13, fontWeight: 700, color: DARK, letterSpacing: "-0.2px" }}>API Keys &amp; Integrations</h2>
+            </div>
+            <div style={{ padding: "16px 24px" }}>
+              <p style={{ fontSize: 13, color: MID, lineHeight: 1.7 }}>
+                Managing API keys requires an admin account. Ask an administrator to update credentials.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Data & Privacy */}
         <div className="glass-card" style={{ overflow: "hidden" }}>

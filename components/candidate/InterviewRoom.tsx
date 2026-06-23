@@ -2,6 +2,7 @@
 import { useState } from "react";
 import ConsentScreen from "./ConsentScreen";
 import ActiveInterview from "./ActiveInterview";
+import ActiveInterviewPipecat from "./ActiveInterviewPipecat";
 import CompletionScreen from "./CompletionScreen";
 
 interface PageData {
@@ -25,6 +26,10 @@ export default function InterviewRoom({ pageData }: { pageData: PageData }) {
   const [phase, setPhase] = useState<Phase>(initialPhase);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [callId, setCallId] = useState<string | null>(null);
+  // Pipecat (Groq voice agent) session
+  const [provider, setProvider] = useState<"retell" | "pipecat">("retell");
+  const [botUrl, setBotUrl] = useState<string | null>(null);
+  const [pipecatConfig, setPipecatConfig] = useState<Record<string, unknown> | null>(null);
 
   if (expired && phase !== "completed") {
     return (
@@ -56,8 +61,15 @@ export default function InterviewRoom({ pageData }: { pageData: PageData }) {
     }
 
     const data = await res.json();
-    setAccessToken(data.access_token);
-    setCallId(data.call_id);
+    if (data.provider === "pipecat") {
+      setProvider("pipecat");
+      setBotUrl(data.bot_url);
+      setPipecatConfig(data.config);
+    } else {
+      setProvider("retell");
+      setAccessToken(data.access_token);
+      setCallId(data.call_id);
+    }
     setPhase("active");
   }
 
@@ -75,7 +87,16 @@ export default function InterviewRoom({ pageData }: { pageData: PageData }) {
           onAccept={handleConsentAccepted}
         />
       )}
-      {phase === "active" && accessToken && (
+      {phase === "active" && provider === "pipecat" && botUrl && pipecatConfig && (
+        <ActiveInterviewPipecat
+          botUrl={botUrl}
+          config={pipecatConfig}
+          candidateName={candidate.name}
+          jobTitle={job.title}
+          onCallEnded={handleCallEnded}
+        />
+      )}
+      {phase === "active" && provider === "retell" && accessToken && (
         <ActiveInterview
           accessToken={accessToken}
           callId={callId!}

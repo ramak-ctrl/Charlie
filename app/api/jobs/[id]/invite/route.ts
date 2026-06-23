@@ -2,6 +2,7 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { sendInterviewInvite } from "@/lib/email";
+import { getSetting } from "@/lib/settings";
 
 const InviteSchema = z.object({
   candidates: z.array(z.object({
@@ -62,11 +63,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
       let emailSent = false;
       let emailError: string | undefined;
-      const hasEmail = !!(process.env.RESEND_API_KEY ||
+      const resendKey = await getSetting("RESEND_API_KEY");
+      const hasEmail = !!(resendKey ||
         (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS));
 
       if (hasEmail) {
-        const fromEmail = process.env.SMTP_FROM ?? user.email ?? "rama.k@mechispike.com";
+        const fromEmail =
+          (await getSetting("EMAIL_FROM")) || process.env.SMTP_FROM || user.email || "rama.k@mechispike.com";
         try {
           await sendInterviewInvite({
             fromEmail,

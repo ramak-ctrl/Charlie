@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Retell from "retell-sdk";
 import { analyzeInterview } from "@/lib/anthropic";
 import type { ScreeningQuestion } from "@/lib/types";
+import { getSetting } from "@/lib/settings";
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ interviewId: string }> }) {
   const { interviewId } = await params;
@@ -28,7 +29,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ in
     return NextResponse.json({ error: "No call ID on this interview" }, { status: 422 });
   }
 
-  const retell = new Retell({ apiKey: process.env.RETELL_API_KEY! });
+  const retell = new Retell({ apiKey: await getSetting("RETELL_API_KEY") });
   let callData: Record<string, unknown>;
   try {
     callData = await retell.call.retrieve(interview.retell_call_id) as unknown as Record<string, unknown>;
@@ -72,14 +73,14 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ in
   try {
     const { data: fullInterview } = await serviceClient
       .from("interviews")
-      .select("*, jobs(title, key_skills, screening_questions(*))")
+      .select("*, jobs(title, key_skills, role_criteria, screening_questions(*))")
       .eq("id", interviewId)
       .single();
 
-    const jobData = (fullInterview!.jobs as { title: string; key_skills: string[]; screening_questions: ScreeningQuestion[] });
+    const jobData = (fullInterview!.jobs as { title: string; key_skills: string[]; role_criteria: string[]; screening_questions: ScreeningQuestion[] });
     const result = await analyzeInterview({
       transcript: transcriptObject as { role: "agent" | "user"; content: string }[],
-      job: { title: jobData.title, key_skills: jobData.key_skills },
+      job: { title: jobData.title, key_skills: jobData.key_skills, role_criteria: jobData.role_criteria ?? [] },
       screeningQuestions: jobData.screening_questions ?? [],
     });
     await serviceClient.from("evaluations").insert({ interview_id: interviewId, ...result });

@@ -271,7 +271,7 @@ export default function LoginPage() {
 
           {/* Back to landing */}
           <a href="/" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 13, fontWeight: 500, color: C.mid, textDecoration: "none", padding: "11px 0", border: `1px solid ${C.border}`, borderRadius: 10, background: "#fff", transition: "border-color 0.15s, color 0.15s" }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = C.borderMd; e.currentTarget.style.color = C.dark; }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = C.muted; e.currentTarget.style.color = C.dark; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.mid; }}>
             <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M11 7H3M7 3l-4 4 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
             Back to homepage

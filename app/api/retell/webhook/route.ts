@@ -3,12 +3,13 @@ import { NextRequest, NextResponse } from "next/server";
 import Retell from "retell-sdk";
 import { analyzeInterview } from "@/lib/anthropic";
 import type { ScreeningQuestion } from "@/lib/types";
+import { getSetting } from "@/lib/settings";
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
   const signature = request.headers.get("x-retell-signature") ?? "";
 
-  const webhookSecret = process.env.RETELL_WEBHOOK_SECRET;
+  const webhookSecret = await getSetting("RETELL_WEBHOOK_SECRET");
   if (webhookSecret) {
     const isValid = Retell.verify(body, webhookSecret, signature);
     if (!isValid) return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
 
   // call_analyzed — transcript is fully processed and ready.
   // transcript_object is the structured array; transcript is a plain text string.
-  const retell = new Retell({ apiKey: process.env.RETELL_API_KEY! });
+  const retell = new Retell({ apiKey: await getSetting("RETELL_API_KEY") });
   let fullCall: Awaited<ReturnType<typeof retell.call.retrieve>>;
   try {
     fullCall = await retell.call.retrieve(callId);
@@ -77,7 +78,7 @@ export async function POST(request: NextRequest) {
     // Run analysis directly — avoids depending on NEXT_PUBLIC_APP_URL being correct
     const { data: fullInterview } = await supabase
       .from("interviews")
-      .select("*, jobs(title, key_skills, screening_questions(*))")
+      .select("*, jobs(title, key_skills, role_criteria, screening_questions(*))")
       .eq("id", interview.id)
       .single();
 
@@ -90,10 +91,10 @@ export async function POST(request: NextRequest) {
 
       if (!existing) {
         try {
-          const jobData = fullInterview.jobs as { title: string; key_skills: string[]; screening_questions: ScreeningQuestion[] };
+          const jobData = fullInterview.jobs as { title: string; key_skills: string[]; role_criteria: string[]; screening_questions: ScreeningQuestion[] };
           const result = await analyzeInterview({
             transcript: transcript as { role: "agent" | "user"; content: string }[],
-            job: { title: jobData.title, key_skills: jobData.key_skills },
+            job: { title: jobData.title, key_skills: jobData.key_skills, role_criteria: jobData.role_criteria ?? [] },
             screeningQuestions: jobData.screening_questions ?? [],
           });
           await supabase.from("evaluations").insert({ interview_id: interview.id, ...result });

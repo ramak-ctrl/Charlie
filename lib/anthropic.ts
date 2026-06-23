@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { Evaluation, Job, ScreeningQuestion, TranscriptEntry } from "./types";
+import { getSetting } from "./settings";
 
 function buildPrompts(params: {
   transcript: TranscriptEntry[];
@@ -112,7 +113,7 @@ function extractJson(text: string): string {
   return text.trim();
 }
 
-async function analyzeWithGroq(params: Parameters<typeof buildPrompts>[0]) {
+async function analyzeWithGroq(params: Parameters<typeof buildPrompts>[0], apiKey: string) {
   const { system, user } = buildPrompts(params);
   const model = process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile";
 
@@ -120,7 +121,7 @@ async function analyzeWithGroq(params: Parameters<typeof buildPrompts>[0]) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
+      "Authorization": `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       model,
@@ -171,9 +172,9 @@ async function analyzeWithOllama(params: Parameters<typeof buildPrompts>[0]) {
   return JSON.parse(extractJson(text));
 }
 
-async function analyzeWithClaude(params: Parameters<typeof buildPrompts>[0]) {
+async function analyzeWithClaude(params: Parameters<typeof buildPrompts>[0], apiKey: string) {
   const { system, user } = buildPrompts(params);
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+  const client = new Anthropic({ apiKey });
 
   const response = await client.messages.create({
     model: "claude-sonnet-4-6",
@@ -193,13 +194,15 @@ export async function analyzeInterview(
     screeningQuestions: ScreeningQuestion[];
   }
 ): Promise<Omit<Evaluation, "id" | "interview_id" | "recruiter_confirmed" | "recruiter_notes" | "created_at">> {
-  const provider = process.env.ANALYSIS_PROVIDER ?? (
-    process.env.ANTHROPIC_API_KEY ? "anthropic" :
-    process.env.GROQ_API_KEY ? "groq" :
+  const anthropicKey = await getSetting("ANTHROPIC_API_KEY");
+  const groqKey = await getSetting("GROQ_API_KEY");
+  const provider = (await getSetting("ANALYSIS_PROVIDER")) || (
+    anthropicKey ? "anthropic" :
+    groqKey ? "groq" :
     "ollama"
   );
 
-  if (provider === "groq") return analyzeWithGroq(params);
+  if (provider === "groq") return analyzeWithGroq(params, groqKey);
   if (provider === "ollama") return analyzeWithOllama(params);
-  return analyzeWithClaude(params);
+  return analyzeWithClaude(params, anthropicKey);
 }

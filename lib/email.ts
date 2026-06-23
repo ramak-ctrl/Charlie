@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import { Resend } from "resend";
+import { getSetting } from "./settings";
 
 /* ─────────────────────────────────────────────────────────────
    Build the invitation email HTML
@@ -99,7 +100,7 @@ async function sendViaResend(params: {
   subject: string;
   html: string;
 }) {
-  const resend = new Resend(process.env.RESEND_API_KEY!);
+  const resend = new Resend(await getSetting("RESEND_API_KEY"));
   const { error } = await resend.emails.send({
     from: `Charlie Interviews <${params.fromEmail}>`,
     to:   params.to,
@@ -152,7 +153,7 @@ export async function sendInterviewInvite(params: {
   const subject = `Your interview invitation — ${jobTitle}`;
   const html    = buildInviteHtml({ candidateName, jobTitle, interviewLink, expiresAt });
 
-  if (process.env.RESEND_API_KEY) {
+  if (await getSetting("RESEND_API_KEY")) {
     await sendViaResend({ fromEmail, to, subject, html });
   } else if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
     await sendViaSMTP({ fromEmail, to, subject, html });
