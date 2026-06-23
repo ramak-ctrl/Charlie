@@ -1,7 +1,7 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { buildInterviewSystemPrompt } from "@/lib/voicePrompt";
+import { buildInterviewSystemPrompt, DEFAULT_COVERAGE } from "@/lib/voicePrompt";
 import { getSetting } from "@/lib/settings";
 
 const BodySchema = z.object({
@@ -88,12 +88,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     await supabase.from("interview_tokens").update({ used_at: new Date().toISOString() }).eq("id", tokenData.id);
     await supabase.from("candidates").update({ status: "started" }).eq("id", candidate.id);
 
+    // Resilient read of interview_coverage (column may not exist pre-migration 006).
+    let coverage = DEFAULT_COVERAGE;
+    const { data: covRow } = await supabase.from("jobs").select("interview_coverage").eq("id", job.id).maybeSingle();
+    if (covRow?.interview_coverage && Array.isArray(covRow.interview_coverage) && covRow.interview_coverage.length) {
+      coverage = covRow.interview_coverage as string[];
+    }
+
     const systemPrompt = buildInterviewSystemPrompt({
       candidateName: candidate.name,
       jobTitle: job.title,
       companyIntro: job.company_intro,
       keySkills: job.key_skills ?? [],
       screeningQuestions: screeningQs,
+      coverage,
     });
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";

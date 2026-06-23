@@ -24,6 +24,7 @@ const CreateJobSchema = z.object({
   nice_to_have_skills:  z.string().optional().nullable(),
   key_skills:           z.array(z.string()).default([]),
   role_criteria:        z.array(z.string()).default([]),
+  interview_coverage:   z.array(z.string()).optional(),
   status:               z.enum(["draft", "active", "paused", "closed"]).default("draft"),
   screening_questions: z.array(z.object({
     question:      z.string().min(1),
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { screening_questions, ...jobData } = parsed.data;
+  const { screening_questions, interview_coverage, ...jobData } = parsed.data;
 
   const { data: job, error: jobError } = await supabase
     .from("jobs")
@@ -68,6 +69,13 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (jobError) return NextResponse.json({ error: jobError.message }, { status: 500 });
+
+  // Persist coverage separately so a missing column (pre-migration 006) can't
+  // break job creation.
+  if (interview_coverage !== undefined) {
+    const { error: covErr } = await supabase.from("jobs").update({ interview_coverage }).eq("id", job.id);
+    if (covErr) console.warn("[jobs] interview_coverage not saved (run migration 006):", covErr.message);
+  }
 
   const questions = screening_questions ?? DEFAULT_SCREENING_QUESTIONS;
   const { error: qError } = await supabase

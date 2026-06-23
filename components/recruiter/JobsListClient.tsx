@@ -7,6 +7,20 @@ import {
   Search, Users, Trash2, ArrowRight, Briefcase, Plus,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { ColumnCustomizer, useColumnVisibility, type ColumnDef } from "./ColumnCustomizer";
+
+const JOB_COLUMNS: ColumnDef[] = [
+  { key: "client", label: "Client" },
+  { key: "category", label: "Category" },
+  { key: "type", label: "Type" },
+  { key: "priority", label: "Priority" },
+  { key: "status", label: "Status" },
+  { key: "experience", label: "Experience" },
+  { key: "positions", label: "Positions" },
+  { key: "location", label: "Location" },
+  { key: "candidates", label: "Candidates" },
+  { key: "created", label: "Created" },
+];
 
 type Job = {
   id: string;
@@ -66,6 +80,7 @@ export default function JobsListClient({ jobs }: { jobs: Job[] }) {
   const [activeFilter, setActiveFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);
+  const { visible, toggle } = useColumnVisibility("jobs-table-cols", JOB_COLUMNS);
 
   const counts: Record<string, number> = {
     all:    jobs.length,
@@ -131,22 +146,24 @@ export default function JobsListClient({ jobs }: { jobs: Job[] }) {
         </div>
       </div>
 
-      {/* ── SEARCH ── */}
-      <div style={{
-        display: "flex", alignItems: "center", gap: 10,
-        background: "#fff", border: `1px solid ${BORDER}`, borderRadius: 10,
-        padding: "0 14px", marginBottom: 16,
-        boxShadow: "0 1px 4px rgba(28,56,41,0.05)",
-      }}>
-        <Search style={{ width: 15, height: 15, color: MUTED, flexShrink: 0 }} />
-        <input
-          type="text" placeholder="Search / Filters"
-          value={search} onChange={e => setSearch(e.target.value)}
-          style={{ flex: 1, padding: "12px 0", background: "none", border: "none", outline: "none", fontSize: 13, color: DARK }}
-        />
-        {search && (
-          <button onClick={() => setSearch("")} style={{ background: "none", border: "none", color: MUTED, cursor: "pointer", padding: "4px 2px", fontSize: 13 }}>✕</button>
-        )}
+      {/* ── SEARCH + CUSTOMISE ── */}
+      <div style={{ display: "flex", alignItems: "stretch", gap: 10, marginBottom: 16 }}>
+        <div style={{
+          flex: 1, display: "flex", alignItems: "center", gap: 10,
+          background: "#fff", border: `1px solid ${BORDER}`, borderRadius: 10,
+          padding: "0 14px", boxShadow: "0 1px 4px rgba(28,56,41,0.05)",
+        }}>
+          <Search style={{ width: 15, height: 15, color: MUTED, flexShrink: 0 }} />
+          <input
+            type="text" placeholder="Search / Filters"
+            value={search} onChange={e => setSearch(e.target.value)}
+            style={{ flex: 1, padding: "12px 0", background: "none", border: "none", outline: "none", fontSize: 13, color: DARK }}
+          />
+          {search && (
+            <button onClick={() => setSearch("")} style={{ background: "none", border: "none", color: MUTED, cursor: "pointer", padding: "4px 2px", fontSize: 13 }}>✕</button>
+          )}
+        </div>
+        <ColumnCustomizer columns={JOB_COLUMNS} visible={visible} onToggle={toggle} />
       </div>
 
       {/* ── TABLE ── */}
@@ -172,16 +189,16 @@ export default function JobsListClient({ jobs }: { jobs: Job[] }) {
                 <tr style={{ background: "#172F22" }}>
                   <th style={{ ...TH, width: 48, textAlign: "center" }}>#</th>
                   <th style={TH}>JOB TITLE</th>
-                  <th style={TH}>CLIENT</th>
-                  <th style={TH}>CATEGORY</th>
-                  <th style={TH}>TYPE</th>
-                  <th style={TH}>PRIORITY</th>
-                  <th style={TH}>STATUS</th>
-                  <th style={TH}>EXPERIENCE</th>
-                  <th style={TH}>POSITIONS</th>
-                  <th style={TH}>LOCATION</th>
-                  <th style={{ ...TH, textAlign: "center" }}>CANDIDATES</th>
-                  <th style={TH}>CREATED</th>
+                  {visible.client && <th style={TH}>CLIENT</th>}
+                  {visible.category && <th style={TH}>CATEGORY</th>}
+                  {visible.type && <th style={TH}>TYPE</th>}
+                  {visible.priority && <th style={TH}>PRIORITY</th>}
+                  {visible.status && <th style={TH}>STATUS</th>}
+                  {visible.experience && <th style={TH}>EXPERIENCE</th>}
+                  {visible.positions && <th style={TH}>POSITIONS</th>}
+                  {visible.location && <th style={TH}>LOCATION</th>}
+                  {visible.candidates && <th style={{ ...TH, textAlign: "center" }}>CANDIDATES</th>}
+                  {visible.created && <th style={TH}>CREATED</th>}
                   <th style={{ ...TH, width: 64 }} />
                 </tr>
               </thead>
@@ -217,94 +234,114 @@ export default function JobsListClient({ jobs }: { jobs: Job[] }) {
                       </td>
 
                       {/* Client */}
-                      <td style={{ padding: "14px 14px", fontSize: 12, color: MID, whiteSpace: "nowrap", maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {job.client ?? <span style={{ color: "rgba(28,56,41,0.2)" }}>—</span>}
-                      </td>
+                      {visible.client && (
+                        <td style={{ padding: "14px 14px", fontSize: 12, color: MID, whiteSpace: "nowrap", maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {job.client ?? <span style={{ color: "rgba(28,56,41,0.2)" }}>—</span>}
+                        </td>
+                      )}
 
                       {/* Category */}
-                      <td style={{ padding: "14px 14px" }}>
-                        {job.category ? (
-                          <span style={{
-                            fontSize: 11, fontWeight: 500, padding: "3px 9px", borderRadius: 99,
-                            background: "rgba(99,102,241,0.08)", color: "#6366F1",
-                            border: "1px solid rgba(99,102,241,0.15)",
-                            whiteSpace: "nowrap",
-                          }}>
-                            {job.category}
-                          </span>
-                        ) : <span style={{ color: "rgba(28,56,41,0.2)", fontSize: 12 }}>—</span>}
-                      </td>
+                      {visible.category && (
+                        <td style={{ padding: "14px 14px" }}>
+                          {job.category ? (
+                            <span style={{
+                              fontSize: 11, fontWeight: 500, padding: "3px 9px", borderRadius: 99,
+                              background: "rgba(99,102,241,0.08)", color: "#6366F1",
+                              border: "1px solid rgba(99,102,241,0.15)",
+                              whiteSpace: "nowrap",
+                            }}>
+                              {job.category}
+                            </span>
+                          ) : <span style={{ color: "rgba(28,56,41,0.2)", fontSize: 12 }}>—</span>}
+                        </td>
+                      )}
 
                       {/* Type */}
-                      <td style={{ padding: "14px 14px" }}>
-                        <span style={{
-                          fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 99,
-                          background: "rgba(28,56,41,0.07)", color: MID,
-                          border: "1px solid rgba(28,56,41,0.12)",
-                        }}>
-                          {job.job_type ?? "FTE"}
-                        </span>
-                      </td>
+                      {visible.type && (
+                        <td style={{ padding: "14px 14px" }}>
+                          <span style={{
+                            fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 99,
+                            background: "rgba(28,56,41,0.07)", color: MID,
+                            border: "1px solid rgba(28,56,41,0.12)",
+                          }}>
+                            {job.job_type ?? "FTE"}
+                          </span>
+                        </td>
+                      )}
 
                       {/* Priority */}
-                      <td style={{ padding: "14px 14px" }}>
-                        {job.priority ? (
-                          <span style={{
-                            fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 99,
-                            background: pr.bg, color: pr.color,
-                          }}>
-                            {job.priority}
-                          </span>
-                        ) : <span style={{ color: "rgba(28,56,41,0.2)", fontSize: 12 }}>—</span>}
-                      </td>
+                      {visible.priority && (
+                        <td style={{ padding: "14px 14px" }}>
+                          {job.priority ? (
+                            <span style={{
+                              fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 99,
+                              background: pr.bg, color: pr.color,
+                            }}>
+                              {job.priority}
+                            </span>
+                          ) : <span style={{ color: "rgba(28,56,41,0.2)", fontSize: 12 }}>—</span>}
+                        </td>
+                      )}
 
                       {/* Status */}
-                      <td style={{ padding: "14px 14px" }}>
-                        <span style={{
-                          fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 99,
-                          background: st.bg, color: st.color, border: `1px solid ${st.border}`,
-                          whiteSpace: "nowrap",
-                        }}>
-                          {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
-                        </span>
-                      </td>
+                      {visible.status && (
+                        <td style={{ padding: "14px 14px" }}>
+                          <span style={{
+                            fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 99,
+                            background: st.bg, color: st.color, border: `1px solid ${st.border}`,
+                            whiteSpace: "nowrap",
+                          }}>
+                            {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
+                          </span>
+                        </td>
+                      )}
 
                       {/* Experience */}
-                      <td style={{ padding: "14px 14px", fontSize: 12, color: MID, whiteSpace: "nowrap" }}>
-                        {expStr}
-                      </td>
+                      {visible.experience && (
+                        <td style={{ padding: "14px 14px", fontSize: 12, color: MID, whiteSpace: "nowrap" }}>
+                          {expStr}
+                        </td>
+                      )}
 
                       {/* Positions */}
-                      <td style={{ padding: "14px 14px" }}>
-                        <span style={{
-                          display: "inline-flex", alignItems: "center", justifyContent: "center",
-                          minWidth: 24, height: 24, borderRadius: 99,
-                          background: "rgba(28,56,41,0.07)", color: DARK,
-                          fontSize: 12, fontWeight: 700,
-                        }}>
-                          {job.positions ?? 1}
-                        </span>
-                      </td>
+                      {visible.positions && (
+                        <td style={{ padding: "14px 14px" }}>
+                          <span style={{
+                            display: "inline-flex", alignItems: "center", justifyContent: "center",
+                            minWidth: 24, height: 24, borderRadius: 99,
+                            background: "rgba(28,56,41,0.07)", color: DARK,
+                            fontSize: 12, fontWeight: 700,
+                          }}>
+                            {job.positions ?? 1}
+                          </span>
+                        </td>
+                      )}
 
                       {/* Location */}
-                      <td style={{ padding: "14px 14px", fontSize: 12, color: MID, maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {job.location ?? <span style={{ color: "rgba(28,56,41,0.2)" }}>—</span>}
-                      </td>
+                      {visible.location && (
+                        <td style={{ padding: "14px 14px", fontSize: 12, color: MID, maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {job.location ?? <span style={{ color: "rgba(28,56,41,0.2)" }}>—</span>}
+                        </td>
+                      )}
 
                       {/* Candidates */}
-                      <td style={{ padding: "14px 14px", textAlign: "center" }}>
-                        <div style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-                          <Users style={{ width: 13, height: 13, color: candidateCount > 0 ? "#059669" : "#DC2626" }} />
-                          <span style={{ fontSize: 13, fontWeight: 700, color: candidateCount > 0 ? "#059669" : "#DC2626" }}>
-                            {candidateCount}
-                          </span>
-                        </div>
-                      </td>
+                      {visible.candidates && (
+                        <td style={{ padding: "14px 14px", textAlign: "center" }}>
+                          <div style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                            <Users style={{ width: 13, height: 13, color: candidateCount > 0 ? "#059669" : "#DC2626" }} />
+                            <span style={{ fontSize: 13, fontWeight: 700, color: candidateCount > 0 ? "#059669" : "#DC2626" }}>
+                              {candidateCount}
+                            </span>
+                          </div>
+                        </td>
+                      )}
 
                       {/* Created */}
-                      <td style={{ padding: "14px 14px", fontSize: 12, color: MUTED, whiteSpace: "nowrap" }}>
-                        {formatDate(job.created_at)}
-                      </td>
+                      {visible.created && (
+                        <td style={{ padding: "14px 14px", fontSize: 12, color: MUTED, whiteSpace: "nowrap" }}>
+                          {formatDate(job.created_at)}
+                        </td>
+                      )}
 
                       {/* Actions */}
                       <td style={{ padding: "14px 10px" }} onClick={e => e.stopPropagation()}>

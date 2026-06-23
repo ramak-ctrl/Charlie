@@ -23,6 +23,7 @@ const UpdateJobSchema = z.object({
   nice_to_have_skills:  z.string().optional().nullable(),
   key_skills:           z.array(z.string()).optional(),
   role_criteria:        z.array(z.string()).optional(),
+  interview_coverage:   z.array(z.string()).optional(),
   status:               z.enum(["draft", "active", "paused", "closed"]).optional(),
   screening_questions: z.array(z.object({
     id:            z.string().uuid().optional(),
@@ -64,11 +65,18 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const parsed = UpdateJobSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const { screening_questions, ...jobData } = parsed.data;
+  const { screening_questions, interview_coverage, ...jobData } = parsed.data;
 
   const { data: updatedJob, error } = await supabase
     .from("jobs").update(jobData).eq("id", id).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Persist coverage separately so a missing column (pre-migration 006) can't
+  // break the main job save.
+  if (interview_coverage !== undefined) {
+    const { error: covErr } = await supabase.from("jobs").update({ interview_coverage }).eq("id", id);
+    if (covErr) console.warn("[jobs] interview_coverage not saved (run migration 006):", covErr.message);
+  }
 
   if (screening_questions !== undefined) {
     await supabase.from("screening_questions").delete().eq("job_id", id);

@@ -61,6 +61,14 @@ const PRIORITY_COLORS: Record<string, string> = {
   P0: "#DC2626", P1: "#D97706", P2: "#6366F1", P3: "#7A9E8E",
 };
 
+const COVERAGE_OPTIONS: { key: string; label: string; desc: string }[] = [
+  { key: "screening_questions", label: "Screening Questions", desc: "Ask the screening questions defined below." },
+  { key: "technical", label: "Technical Screening", desc: "Probe the key skills with role-specific technical questions." },
+  { key: "behavioural", label: "Behavioural Screening", desc: "STAR-style questions on teamwork, pressure, conflict." },
+  { key: "company_briefing", label: "Briefing on the Company", desc: "Give a short intro about the company to the candidate." },
+];
+const DEFAULT_COVERAGE = ["screening_questions", "behavioural", "company_briefing"];
+
 export default function JobForm({ job, userFullName = "" }: Props) {
   const router = useRouter();
   const { toast } = useToast();
@@ -77,8 +85,13 @@ export default function JobForm({ job, userFullName = "" }: Props) {
           .map(({ id: _id, job_id: _jid, created_at: _ca, ...q }) => q)
       : DEFAULT_SCREENING_QUESTIONS
   );
+  const [coverage, setCoverage] = useState<string[]>(job?.interview_coverage ?? DEFAULT_COVERAGE);
   const [submitting, setSubmitting] = useState(false);
-  const [open, setOpen] = useState([0, 1, 2, 3, 4]);
+  const [open, setOpen] = useState([0, 1, 2, 3, 4, 5]);
+
+  function toggleCoverage(key: string) {
+    setCoverage((c) => (c.includes(key) ? c.filter((k) => k !== key) : [...c, key]));
+  }
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -125,6 +138,7 @@ export default function JobForm({ job, userFullName = "" }: Props) {
         ...data,
         key_skills: skills,
         role_criteria: criteria,
+        interview_coverage: coverage,
         screening_questions: questions,
         expiry_date:         data.expiry_date         || null,
         expected_start_date: data.expected_start_date || null,
@@ -526,6 +540,41 @@ export default function JobForm({ job, userFullName = "" }: Props) {
           Questions asked by Charlie during the screening call. Reorder, edit, add, or remove as needed.
         </p>
         <ScreeningQuestionsEditor questions={questions} onChange={setQuestions} />
+      </Section>
+
+      {/* ── Section 6: Interview Coverage ── */}
+      <Section title="Interview Coverage" index={5} open={open.includes(5)} onToggle={toggleSection}>
+        <p style={{ fontSize: 13, color: MUTED, marginBottom: 14 }}>
+          Choose what Charlie should cover during the screening interview for this role.
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {COVERAGE_OPTIONS.map((opt) => {
+            const checked = coverage.includes(opt.key);
+            return (
+              <label
+                key={opt.key}
+                style={{
+                  display: "flex", alignItems: "flex-start", gap: 11, cursor: "pointer",
+                  padding: "12px 14px", borderRadius: 10,
+                  border: `1px solid ${checked ? "#3D6B54" : BORDER}`,
+                  background: checked ? "rgba(184,224,74,0.10)" : "#fff",
+                  transition: "all 0.13s",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => toggleCoverage(opt.key)}
+                  style={{ accentColor: DARK, width: 16, height: 16, marginTop: 1, cursor: "pointer", flexShrink: 0 }}
+                />
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: DARK }}>{opt.label}</div>
+                  <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{opt.desc}</div>
+                </div>
+              </label>
+            );
+          })}
+        </div>
       </Section>
 
       {/* ── Actions ── */}

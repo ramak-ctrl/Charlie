@@ -9,6 +9,18 @@ import {
 import { formatDate } from "@/lib/utils";
 import EvaluationReport from "@/components/recruiter/EvaluationReport";
 import type { CandidateRow } from "@/app/(recruiter)/candidates/page";
+import { ColumnCustomizer, useColumnVisibility, type ColumnDef } from "./ColumnCustomizer";
+
+const CAND_COLUMNS: ColumnDef[] = [
+  { key: "job", label: "Job" },
+  { key: "status", label: "Status" },
+  { key: "score", label: "Score" },
+  { key: "roleFit", label: "Role Fit" },
+  { key: "probe", label: "Probe" },
+  { key: "notice", label: "Notice" },
+  { key: "location", label: "Location" },
+  { key: "added", label: "Added" },
+];
 
 const DARK   = "#1C3829";
 const MID    = "#3D6B54";
@@ -60,6 +72,7 @@ export default function CandidatesListClient({ candidates, candidateRanks }: Pro
   const [search, setSearch] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);
   const [reportInterviewId, setReportInterviewId] = useState<string | null>(null);
+  const { visible, toggle } = useColumnVisibility("candidates-table-cols", CAND_COLUMNS);
 
   const counts: Record<string, number> = {
     all:       candidates.length,
@@ -118,15 +131,18 @@ export default function CandidatesListClient({ candidates, candidateRanks }: Pro
         </div>
       </div>
 
-      {/* ── SEARCH ── */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#fff", border: `1px solid ${BORDER}`, borderRadius: 10, padding: "0 14px", marginBottom: 16, boxShadow: "0 1px 4px rgba(28,56,41,0.05)" }}>
-        <Search style={{ width: 15, height: 15, color: MUTED, flexShrink: 0 }} />
-        <input
-          type="text" placeholder="Search by name, email, or job..."
-          value={search} onChange={e => setSearch(e.target.value)}
-          style={{ flex: 1, padding: "12px 0", background: "none", border: "none", outline: "none", fontSize: 13, color: DARK }}
-        />
-        {search && <button onClick={() => setSearch("")} style={{ background: "none", border: "none", color: MUTED, cursor: "pointer", padding: "4px 2px", fontSize: 13 }}>✕</button>}
+      {/* ── SEARCH + CUSTOMISE ── */}
+      <div style={{ display: "flex", alignItems: "stretch", gap: 10, marginBottom: 16 }}>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10, background: "#fff", border: `1px solid ${BORDER}`, borderRadius: 10, padding: "0 14px", boxShadow: "0 1px 4px rgba(28,56,41,0.05)" }}>
+          <Search style={{ width: 15, height: 15, color: MUTED, flexShrink: 0 }} />
+          <input
+            type="text" placeholder="Search by name, email, or job..."
+            value={search} onChange={e => setSearch(e.target.value)}
+            style={{ flex: 1, padding: "12px 0", background: "none", border: "none", outline: "none", fontSize: 13, color: DARK }}
+          />
+          {search && <button onClick={() => setSearch("")} style={{ background: "none", border: "none", color: MUTED, cursor: "pointer", padding: "4px 2px", fontSize: 13 }}>✕</button>}
+        </div>
+        <ColumnCustomizer columns={CAND_COLUMNS} visible={visible} onToggle={toggle} />
       </div>
 
       {/* ── TABLE ── */}
@@ -147,14 +163,14 @@ export default function CandidatesListClient({ candidates, candidateRanks }: Pro
                 <tr style={{ background: "#172F22" }}>
                   <th style={{ ...TH, width: 60 }}>RANK</th>
                   <th style={TH}>CANDIDATE</th>
-                  <th style={TH}>JOB</th>
-                  <th style={TH}>STATUS</th>
-                  <th style={TH}>SCORE</th>
-                  <th style={TH}>ROLE FIT</th>
-                  <th style={TH}>PROBE</th>
-                  <th style={TH}>NOTICE</th>
-                  <th style={TH}>LOCATION</th>
-                  <th style={TH}>ADDED</th>
+                  {visible.job && <th style={TH}>JOB</th>}
+                  {visible.status && <th style={TH}>STATUS</th>}
+                  {visible.score && <th style={TH}>SCORE</th>}
+                  {visible.roleFit && <th style={TH}>ROLE FIT</th>}
+                  {visible.probe && <th style={TH}>PROBE</th>}
+                  {visible.notice && <th style={TH}>NOTICE</th>}
+                  {visible.location && <th style={TH}>LOCATION</th>}
+                  {visible.added && <th style={TH}>ADDED</th>}
                   <th style={{ ...TH, textAlign: "right", width: 100 }}>ACTIONS</th>
                 </tr>
               </thead>
@@ -202,74 +218,90 @@ export default function CandidatesListClient({ candidates, candidateRanks }: Pro
                       </td>
 
                       {/* Job */}
-                      <td style={{ padding: "13px 14px" }}>
-                        <span style={{ fontSize: 12, fontWeight: 500, color: MID, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
-                          {c.jobs?.title ?? "—"}
-                        </span>
-                      </td>
+                      {visible.job && (
+                        <td style={{ padding: "13px 14px" }}>
+                          <span style={{ fontSize: 12, fontWeight: 500, color: MID, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
+                            {c.jobs?.title ?? "—"}
+                          </span>
+                        </td>
+                      )}
 
                       {/* Status */}
-                      <td style={{ padding: "13px 14px" }}>
-                        <span style={{ fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 99, background: st.bg, color: st.color, border: `1px solid ${st.border}`, whiteSpace: "nowrap" }}>
-                          {c.status.charAt(0).toUpperCase() + c.status.slice(1)}
-                        </span>
-                      </td>
+                      {visible.status && (
+                        <td style={{ padding: "13px 14px" }}>
+                          <span style={{ fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 99, background: st.bg, color: st.color, border: `1px solid ${st.border}`, whiteSpace: "nowrap" }}>
+                            {c.status.charAt(0).toUpperCase() + c.status.slice(1)}
+                          </span>
+                        </td>
+                      )}
 
                       {/* Score */}
-                      <td style={{ padding: "13px 14px" }}>
-                        {evaluation?.overall_score != null ? (
-                          <span style={{ fontSize: 13, fontWeight: 800, color: DARK, display: "inline-flex", alignItems: "baseline", gap: 2 }}>
-                            {Number(evaluation.overall_score).toFixed(1)}
-                            <span style={{ fontSize: 10, fontWeight: 400, color: MUTED }}>/10</span>
-                          </span>
-                        ) : (
-                          <span style={{ color: "rgba(28,56,41,0.2)", fontSize: 12 }}>—</span>
-                        )}
-                      </td>
+                      {visible.score && (
+                        <td style={{ padding: "13px 14px" }}>
+                          {evaluation?.overall_score != null ? (
+                            <span style={{ fontSize: 13, fontWeight: 800, color: DARK, display: "inline-flex", alignItems: "baseline", gap: 2 }}>
+                              {Number(evaluation.overall_score).toFixed(1)}
+                              <span style={{ fontSize: 10, fontWeight: 400, color: MUTED }}>/10</span>
+                            </span>
+                          ) : (
+                            <span style={{ color: "rgba(28,56,41,0.2)", fontSize: 12 }}>—</span>
+                          )}
+                        </td>
+                      )}
 
                       {/* Role Fit */}
-                      <td style={{ padding: "13px 14px" }}>
-                        {totalCount > 0 ? (
-                          <span style={{
-                            fontSize: 12, fontWeight: 700,
-                            color: metCount === totalCount ? "#059669" : metCount >= totalCount / 2 ? "#D97706" : "#DC2626",
-                          }}>
-                            {metCount}/{totalCount} criteria
-                          </span>
-                        ) : evaluation ? (
-                          <span style={{ fontSize: 11, color: MUTED }}>No criteria set</span>
-                        ) : (
-                          <span style={{ color: "rgba(28,56,41,0.2)", fontSize: 12 }}>—</span>
-                        )}
-                      </td>
+                      {visible.roleFit && (
+                        <td style={{ padding: "13px 14px" }}>
+                          {totalCount > 0 ? (
+                            <span style={{
+                              fontSize: 12, fontWeight: 700,
+                              color: metCount === totalCount ? "#059669" : metCount >= totalCount / 2 ? "#D97706" : "#DC2626",
+                            }}>
+                              {metCount}/{totalCount} criteria
+                            </span>
+                          ) : evaluation ? (
+                            <span style={{ fontSize: 11, color: MUTED }}>No criteria set</span>
+                          ) : (
+                            <span style={{ color: "rgba(28,56,41,0.2)", fontSize: 12 }}>—</span>
+                          )}
+                        </td>
+                      )}
 
                       {/* Probe */}
-                      <td style={{ padding: "13px 14px", maxWidth: 180 }}>
-                        {probeCriteria.length > 0 ? (
-                          <span style={{ fontSize: 11, color: "#D97706", fontWeight: 500 }} title={probeCriteria.join(", ")}>
-                            {probeCriteria[0]}{probeCriteria.length > 1 ? ` +${probeCriteria.length - 1}` : ""}
-                          </span>
-                        ) : evaluation ? (
-                          <span style={{ fontSize: 11, color: "#059669" }}>All confirmed</span>
-                        ) : (
-                          <span style={{ color: "rgba(28,56,41,0.2)", fontSize: 12 }}>—</span>
-                        )}
-                      </td>
+                      {visible.probe && (
+                        <td style={{ padding: "13px 14px", maxWidth: 180 }}>
+                          {probeCriteria.length > 0 ? (
+                            <span style={{ fontSize: 11, color: "#D97706", fontWeight: 500 }} title={probeCriteria.join(", ")}>
+                              {probeCriteria[0]}{probeCriteria.length > 1 ? ` +${probeCriteria.length - 1}` : ""}
+                            </span>
+                          ) : evaluation ? (
+                            <span style={{ fontSize: 11, color: "#059669" }}>All confirmed</span>
+                          ) : (
+                            <span style={{ color: "rgba(28,56,41,0.2)", fontSize: 12 }}>—</span>
+                          )}
+                        </td>
+                      )}
 
                       {/* Notice */}
-                      <td style={{ padding: "13px 14px", fontSize: 12, color: MID, whiteSpace: "nowrap" }}>
-                        {c.notice_period ?? <span style={{ color: "rgba(28,56,41,0.2)" }}>—</span>}
-                      </td>
+                      {visible.notice && (
+                        <td style={{ padding: "13px 14px", fontSize: 12, color: MID, whiteSpace: "nowrap" }}>
+                          {c.notice_period ?? <span style={{ color: "rgba(28,56,41,0.2)" }}>—</span>}
+                        </td>
+                      )}
 
                       {/* Location */}
-                      <td style={{ padding: "13px 14px", fontSize: 12, color: MID }}>
-                        {c.current_location ?? <span style={{ color: "rgba(28,56,41,0.2)" }}>—</span>}
-                      </td>
+                      {visible.location && (
+                        <td style={{ padding: "13px 14px", fontSize: 12, color: MID }}>
+                          {c.current_location ?? <span style={{ color: "rgba(28,56,41,0.2)" }}>—</span>}
+                        </td>
+                      )}
 
                       {/* Added */}
-                      <td style={{ padding: "13px 14px", fontSize: 12, color: MUTED, whiteSpace: "nowrap" }}>
-                        {formatDate(c.created_at)}
-                      </td>
+                      {visible.added && (
+                        <td style={{ padding: "13px 14px", fontSize: 12, color: MUTED, whiteSpace: "nowrap" }}>
+                          {formatDate(c.created_at)}
+                        </td>
+                      )}
 
                       {/* Actions */}
                       <td style={{ padding: "13px 10px" }} onClick={e => e.stopPropagation()}>

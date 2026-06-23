@@ -51,6 +51,7 @@ export interface Job {
   nice_to_have_skills: string | null;
   key_skills: string[];
   role_criteria: string[];
+  interview_coverage?: string[];
   status: JobStatus;
   created_at: string;
   updated_at: string;
