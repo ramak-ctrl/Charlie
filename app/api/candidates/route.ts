@@ -9,35 +9,6 @@ const Schema = z.object({
   screening: z.boolean().default(false),
 });
 
-// Search the recruiter's existing candidates by name/email (for the invite picker).
-export async function GET(request: NextRequest) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const q = (request.nextUrl.searchParams.get("q") ?? "").trim();
-  let query = supabase
-    .from("candidates")
-    .select("name, email, jobs!inner(created_by)")
-    .eq("jobs.created_by", user.id)
-    .order("created_at", { ascending: false })
-    .limit(50);
-  if (q) query = query.or(`name.ilike.%${q}%,email.ilike.%${q}%`);
-
-  const { data } = await query;
-  // De-dupe by email (a person may exist under several jobs).
-  const seen = new Set<string>();
-  const results: { name: string; email: string }[] = [];
-  for (const row of data ?? []) {
-    const email = (row.email ?? "").toLowerCase();
-    if (!email || seen.has(email)) continue;
-    seen.add(email);
-    results.push({ name: row.name, email: row.email });
-    if (results.length >= 8) break;
-  }
-  return NextResponse.json({ results });
-}
-
 // Create a candidate and map it to a job. If screening is requested, also mint an
 // interview token and return its link.
 export async function POST(request: NextRequest) {
