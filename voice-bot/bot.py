@@ -47,17 +47,30 @@ CLOSING_PREFIX = "CLOSING:"
 
 # ── ICE servers ───────────────────────────────────────────────────────────────
 
+def _fallback_ice_servers() -> list[IceServer]:
+    """Free public STUN + Open Relay TURN — works without a Metered key (best effort).
+    TURN over :443/TCP is what lets media traverse restrictive networks + PaaS hosts."""
+    return [
+        IceServer(urls="stun:stun.l.google.com:19302"),
+        IceServer(urls="turn:openrelay.metered.ca:80", username="openrelayproject", credential="openrelayproject"),
+        IceServer(urls="turn:openrelay.metered.ca:443", username="openrelayproject", credential="openrelayproject"),
+        IceServer(urls="turn:openrelay.metered.ca:443?transport=tcp", username="openrelayproject", credential="openrelayproject"),
+    ]
+
+
 async def fetch_metered_ice_servers() -> list[IceServer]:
-    """Fetch TURN credentials from Metered and return IceServer list."""
+    """Fetch TURN credentials from Metered; fall back to free STUN/Open Relay TURN."""
     if not METERED_API_KEY:
-        logger.warning("METERED_API_KEY not set — using STUN only (may fail in production)")
-        return [IceServer(urls="stun:stun.l.google.com:19302")]
+        logger.warning("METERED_API_KEY not set — using free STUN/Open Relay TURN fallback")
+        return _fallback_ice_servers()
     try:
         url = f"https://{METERED_APP_DOMAIN}/api/v1/turn/credentials?apiKey={METERED_API_KEY}"
         async with httpx.AsyncClient() as client:
             resp = await client.get(url, timeout=10.0)
             resp.raise_for_status()
             data = resp.json()
+        if not isinstance(data, list) or not data:
+            raise ValueError(f"unexpected Metered response: {data}")
         servers = []
         for s in data:
             urls = s.get("urls", "")
@@ -70,8 +83,8 @@ async def fetch_metered_ice_servers() -> list[IceServer]:
         logger.info(f"Fetched {len(servers)} ICE servers from Metered")
         return servers
     except Exception as e:
-        logger.error(f"Failed to fetch Metered ICE servers: {e} — falling back to STUN only")
-        return [IceServer(urls="stun:stun.l.google.com:19302")]
+        logger.error(f"Metered ICE fetch failed: {e} — using free STUN/Open Relay TURN fallback")
+        return _fallback_ice_servers()
 
 
 # ── System prompt ─────────────────────────────────────────────────────────────
