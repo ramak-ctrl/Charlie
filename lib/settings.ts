@@ -15,27 +15,17 @@ export interface SettingDef {
 }
 
 export const EDITABLE_SETTINGS: SettingDef[] = [
-  // Voice agent
-  { key: "VOICE_PROVIDER", label: "Voice provider", group: "Voice agent", secret: false, placeholder: "pipecat | retell", help: "Which voice agent runs interviews." },
-  { key: "TOM_BOT_URL", label: "Voice bot URL", group: "Voice agent", secret: false, placeholder: "http://localhost:7860", help: "URL of the Groq/Pipecat bot (used when provider = pipecat)." },
-  { key: "BOT_WEBHOOK_SECRET", label: "Bot webhook secret", group: "Voice agent", secret: true, help: "Shared secret the bot sends when posting transcripts back." },
-  { key: "TTS_PROVIDER", label: "TTS provider", group: "Voice agent", secret: false, placeholder: "deepgram | groq", help: "Text-to-speech engine for the bot. Defaults to Deepgram when a Deepgram key is set." },
-  { key: "DEEPGRAM_API_KEY", label: "Deepgram API key", group: "Voice agent", secret: true, placeholder: "Token ...", help: "Deepgram Aura TTS — far higher quota than Groq's free TTS. Get one at deepgram.com." },
-  { key: "GROQ_LLM_MODEL", label: "Interviewer model", group: "Voice agent", secret: false, placeholder: "llama-3.3-70b-versatile | llama-3.1-8b-instant", help: "Groq model the live interviewer uses. Blank = 70b (quality). Use 8b for lower latency / unlimited request count." },
+  // The keys you actually manage. Other config (voice provider, bot URL, TTS
+  // provider, Retell keys, etc.) is handled via environment variables / sensible
+  // defaults and intentionally kept off this page.
+  { key: "GROQ_API_KEY", label: "Groq API key", group: "API Keys", secret: true, placeholder: "gsk_...", help: "Powers the voice interviewer (LLM + speech-to-text). Get one at console.groq.com." },
+  { key: "DEEPGRAM_API_KEY", label: "Deepgram API key", group: "API Keys", secret: true, placeholder: "Token ...", help: "Text-to-speech for the interviewer (Deepgram Aura). Get one at deepgram.com." },
+  { key: "ANTHROPIC_API_KEY", label: "Anthropic API key", group: "API Keys", secret: true, placeholder: "sk-ant-...", help: "Claude — analyzes interviews and generates reports. Optional (falls back to Groq)." },
+  { key: "RESEND_API_KEY", label: "Resend API key", group: "API Keys", secret: true, placeholder: "re_...", help: "Sends candidate interview-invite emails. Optional." },
 
-  // AI analysis
-  { key: "ANALYSIS_PROVIDER", label: "Analysis provider", group: "AI analysis", secret: false, placeholder: "anthropic | groq | ollama" },
-  { key: "ANTHROPIC_API_KEY", label: "Anthropic API key", group: "AI analysis", secret: true, placeholder: "sk-ant-..." },
-  { key: "GROQ_API_KEY", label: "Groq API key", group: "AI analysis", secret: true, placeholder: "gsk_...", help: "Used for Groq analysis and passed to the voice bot." },
-
-  // Retell (fallback voice provider)
-  { key: "RETELL_API_KEY", label: "Retell API key", group: "Retell (fallback)", secret: true, placeholder: "key_..." },
-  { key: "RETELL_AGENT_ID", label: "Retell agent ID", group: "Retell (fallback)", secret: false, placeholder: "agent_..." },
-  { key: "RETELL_WEBHOOK_SECRET", label: "Retell webhook secret", group: "Retell (fallback)", secret: true },
-
-  // Email
-  { key: "RESEND_API_KEY", label: "Resend API key", group: "Email", secret: true, placeholder: "re_..." },
-  { key: "EMAIL_FROM", label: "From address", group: "Email", secret: false, placeholder: "charlie@yourdomain.com" },
+  // A couple of non-secret config fields.
+  { key: "EMAIL_FROM", label: "Invite from-address", group: "Configuration", secret: false, placeholder: "charlie@yourdomain.com", help: "From address for invite emails." },
+  { key: "GROQ_LLM_MODEL", label: "Interviewer model", group: "Configuration", secret: false, placeholder: "llama-3.3-70b-versatile | llama-3.1-8b-instant", help: "Blank = 70b (quality). Use llama-3.1-8b-instant for lower latency." },
 ];
 
 const EDITABLE_KEYS = new Set(EDITABLE_SETTINGS.map((s) => s.key));
