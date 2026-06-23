@@ -25,11 +25,12 @@ export function buildInterviewSystemPrompt(params: {
   // Build the phases that are switched on for this job.
   const phases: string[] = [];
 
-  // Opening is always present.
+  // Opening: the candidate has ALREADY been greeted and asked for consent by a
+  // fixed spoken intro. Do not repeat it — just react to their reply and move on.
   let opening =
-    `OPENING: Give the candidate a moment, then open with a warm, time-appropriate greeting (e.g. "Good morning/afternoon"). Greet ${candidateName} by name, introduce yourself as Charlie, an AI screening interviewer, confirm this is an AI-conducted interview, and ask for their verbal consent to proceed. Wait for consent before continuing.`;
+    `OPENING: ${candidateName} has just been greeted and asked for consent to proceed (already spoken — do NOT greet again, re-introduce yourself, or ask for consent again). When they reply: if they consent, acknowledge in one short sentence and go straight to the first question below; if they decline or hesitate, reassure briefly and, only if they still decline, close.`;
   if (has("company_briefing")) {
-    opening += ` Once they consent, give a brief 1-2 sentence introduction to the company before the first question. Company: ${intro}`;
+    opening += ` Right after they consent you may add a single short sentence about the company before the first question. Company: ${intro}`;
   }
   phases.push(opening);
 

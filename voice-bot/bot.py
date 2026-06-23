@@ -378,25 +378,18 @@ async def run_bot(webrtc_connection: SmallWebRTCConnection, interview_config: di
     async def on_client_ready(rtvi):
         logger.info(f"Client ready — interview_id={interview_id}")
 
-        # Speak a warm greeting immediately so the candidate hears a friendly voice
-        # within ~1s instead of waiting in silence while the LLM prepares its first
-        # question. The greeting is fixed text (fast TTS), then the model takes over.
+        # Speak ONE short greeting that ends by asking for consent, then STOP and
+        # wait for the candidate to reply. Their reply drives the next LLM turn
+        # (proper turn-taking). We do NOT run the LLM here, so the bot doesn't talk
+        # over itself or monologue past the candidate.
         hi = f"Hi {candidate_name}!" if candidate_name else "Hi there!"
         greeting = (
-            f"{hi} Thanks so much for taking the time today. I'm Charlie, your AI interviewer. "
-            "This is a short, relaxed screening conversation, so there's no need to feel nervous. "
-            "Let's get started."
+            f"{hi} I'm Charlie, your A.I. interviewer, and I'll guide you through a short, "
+            "relaxed screening conversation. Quick note before we begin: this interview is "
+            "conducted by A.I. and is being recorded. Are you okay to proceed?"
         )
         context.add_message({"role": "assistant", "content": greeting})
         await worker.queue_frames([TTSSpeakFrame(greeting)])
-
-        # Now let the model continue — without greeting again — into consent + the first question.
-        context.add_message({
-            "role": "user",
-            "content": "I'm ready. Please continue the interview now. Do not greet or introduce "
-                       "yourself again — briefly confirm consent if appropriate, then ask your first question.",
-        })
-        await worker.queue_frames([LLMRunFrame()])
         asyncio.create_task(monitor_closing())
 
     @transport.event_handler("on_client_disconnected")
