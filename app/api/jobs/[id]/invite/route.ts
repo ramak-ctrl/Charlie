@@ -77,21 +77,25 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
   }
 
-  // 2) Fire emails in the BACKGROUND — never blocks the link response.
+  // 2) Send emails. AWAITED (not fire-and-forget) so they actually run on a
+  // production server, where the request can be torn down right after the
+  // response. Each send is timeout-bounded (see lib/email), so this can't hang.
   const resendKey = await getSetting("RESEND_API_KEY");
   const hasEmail = !!(resendKey ||
     (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS));
   if (hasEmail && emailJobs.length) {
     const fromEmail =
       (await getSetting("EMAIL_FROM")) || process.env.SMTP_FROM || user.email || "rama.k@mechispike.com";
-    for (const j of emailJobs) {
-      sendInterviewInvite({
-        fromEmail, to: j.to, candidateName: j.candidateName,
-        jobTitle: job.title, interviewLink: j.interviewLink, expiresAt: j.expiresAt,
-      })
-        .then(() => console.log("[invite] email sent:", j.to))
-        .catch((e) => console.error("[invite] email failed:", j.to, e));
-    }
+    await Promise.allSettled(
+      emailJobs.map((j) =>
+        sendInterviewInvite({
+          fromEmail, to: j.to, candidateName: j.candidateName,
+          jobTitle: job.title, interviewLink: j.interviewLink, expiresAt: j.expiresAt,
+        })
+          .then(() => console.log("[invite] email sent:", j.to))
+          .catch((e) => console.error("[invite] email failed:", j.to, e))
+      )
+    );
   } else if (emailJobs.length) {
     console.log("[invite] no email provider configured — links returned only");
   }
