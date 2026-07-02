@@ -42,18 +42,28 @@ export default function ActiveInterview({ accessToken, callId, candidateName, jo
       if (callLive && active) onCallEnded();
     });
 
-    client.on("error", () => {
+    client.on("error", (err) => {
+      console.error("[retell] SDK error:", err);
       if (timerRef.current) clearInterval(timerRef.current);
       if (active && !callLive) {
-        setError("Connection failed. Please check your microphone and try again.");
+        const msg = err && typeof err === "object" && "message" in err
+          ? String((err as { message: unknown }).message)
+          : String(err ?? "Unknown error");
+        setError(`Connection failed: ${msg}. Please check your microphone and try again.`);
       }
     });
 
     async function initCall() {
-      // Pre-request mic permission so the browser stream is ready when
-      // LiveKit tries to publish — avoids PublishTrackError on slow grant.
+      // Pre-warm mic permission and capture the device ID.
+      // We pass captureDeviceId to startCall so the SDK reuses the same device
+      // rather than calling getUserMedia cold — avoids a race condition where the
+      // OS hasn't released the mic by the time the SDK re-acquires it (which would
+      // create a call with no audio input track, making the agent appear to talk
+      // without listening).
+      let captureDeviceId: string | undefined;
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        captureDeviceId = stream.getAudioTracks()[0]?.getSettings?.().deviceId;
         stream.getTracks().forEach((t) => t.stop());
       } catch {
         if (active) setError("Microphone access denied. Please allow microphone access and refresh.");
@@ -62,9 +72,14 @@ export default function ActiveInterview({ accessToken, callId, candidateName, jo
 
       if (!active) return;
 
+      // Give the OS ~150ms to fully release the mic before the SDK re-acquires it.
+      await new Promise((r) => setTimeout(r, 150));
+      if (!active) return;
+
       try {
-        await client.startCall({ accessToken });
-      } catch {
+        await client.startCall({ accessToken, captureDeviceId });
+      } catch (err) {
+        console.error("[retell] startCall error:", err);
         if (active) setError("Failed to connect. Please check your connection and try again.");
       }
     }

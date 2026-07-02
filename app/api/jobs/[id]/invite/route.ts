@@ -34,7 +34,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const serviceClient = await createServiceClient();
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const results: { email: string; success: boolean; error?: string; interviewLink?: string }[] = [];
+  const results: { email: string; success: boolean; error?: string; interviewLink?: string; emailSent?: boolean; emailError?: string }[] = [];
   const emailJobs: { to: string; candidateName: string; interviewLink: string; expiresAt: string }[] = [];
 
   // 1) Create candidate + token + link for each — fast, no email in this loop.
@@ -86,16 +86,25 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (hasEmail && emailJobs.length) {
     const fromEmail =
       (await getSetting("EMAIL_FROM")) || process.env.SMTP_FROM || user.email || "rama.k@mechispike.com";
-    await Promise.allSettled(
+    const emailResults = await Promise.allSettled(
       emailJobs.map((j) =>
         sendInterviewInvite({
           fromEmail, to: j.to, candidateName: j.candidateName,
           jobTitle: job.title, interviewLink: j.interviewLink, expiresAt: j.expiresAt,
         })
-          .then(() => console.log("[invite] email sent:", j.to))
-          .catch((e) => console.error("[invite] email failed:", j.to, e))
       )
     );
+    emailJobs.forEach((j, i) => {
+      const settled = emailResults[i];
+      const r = results.find((r) => r.email === j.to && r.success);
+      if (settled.status === "fulfilled") {
+        console.log("[invite] email sent:", j.to);
+        if (r) r.emailSent = true;
+      } else {
+        console.error("[invite] email failed:", j.to, settled.reason);
+        if (r) { r.emailSent = false; r.emailError = String(settled.reason); }
+      }
+    });
   } else if (emailJobs.length) {
     console.log("[invite] no email provider configured — links returned only");
   }
