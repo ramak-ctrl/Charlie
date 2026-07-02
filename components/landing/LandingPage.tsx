@@ -391,8 +391,8 @@ function Features() {
 /* ── testimonials ─────────────────────────────────────────── */
 function Testimonials() {
   const quotes = [
-    { text: "What stood out the most was how conversational and human it felt. Rather than feeling automated, Charlie held meaningful screening conversations that helped us gather the candidate insights we needed.", author: "Mechispike", role: "Recruiting Team" },
-    { text: "One challenge we kept running into during onboarding and volunteer screening was finding a process that felt structured without losing the human side of a real conversation. Charlie fixes exactly that.", author: "Dhara", role: "Operations Lead" },
+    { text: "What stood out the most was the conversational and human-like interaction. Rather than feeling automated, Charlie conducted meaningful screening conversations that helped efficiently gather relevant candidate insights.", author: "Mechispike", role: "Recruiting Team" },
+    { text: "One challenge we consistently faced during onboarding and volunteer screening was finding a process that felt structured without losing the human aspect of conversation — and Charlie fixes it.", author: "Dhara", role: "Operations Lead" },
   ];
   return (
     <section style={{ background: C.bgAlt, padding: "80px 40px" }}>
