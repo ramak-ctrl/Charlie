@@ -51,15 +51,10 @@ function Inner({ botUrl, config, candidateName, jobTitle, onCallEnded }: Props) 
     // mounted → unmounted → remounted; an abort flag would cancel the only connect
     // attempt. The startedRef guard above already ensures we connect exactly once.
     (async () => {
-      // Pre-request mic so the stream is ready before WebRTC publishes.
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach((t) => t.stop());
-      } catch (e) {
-        console.error("Microphone error:", e);
-        setError("Microphone access denied. Please allow microphone access and refresh.");
-        return;
-      }
+      // Let Pipecat (SmallWebRTC) acquire the microphone itself on connect.
+      // Do NOT pre-request the mic and stop() it here — that races the OS mic
+      // release and can hand Pipecat a dead audio input track, which is exactly
+      // the "agent talks but never hears the candidate" symptom.
       try {
         await client.startBotAndConnect({
           endpoint: `${botUrl}/start`,
@@ -67,7 +62,7 @@ function Inner({ botUrl, config, candidateName, jobTitle, onCallEnded }: Props) 
         });
       } catch (e) {
         console.error("Voice connect error:", e);
-        setError("Failed to connect. Please check your connection and try again.");
+        setError("Couldn't start the interview. Please allow microphone access and check your connection, then refresh.");
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
