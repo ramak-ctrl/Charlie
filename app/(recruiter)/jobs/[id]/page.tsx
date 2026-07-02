@@ -105,10 +105,10 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
   ].filter(m => m.value != null && m.value !== "");
 
   return (
-    <div style={{ padding: "28px 32px" }} className="space-y-5">
+    <div style={{ padding: "28px 32px" }} className="space-y-5 rpad-x">
 
       {/* ── Header ── */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <div className="flex items-center gap-3" style={{ marginBottom: 5 }}>
             <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.8px", color: C.dark, lineHeight: 1 }}>{job.title}</h1>

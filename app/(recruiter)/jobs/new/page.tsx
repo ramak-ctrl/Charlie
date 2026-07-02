@@ -11,7 +11,7 @@ export default async function NewJobPage() {
     .from("profiles").select("full_name").eq("id", user!.id).single();
 
   return (
-    <div style={{ padding: "28px 32px" }}>
+    <div className="rpad-x" style={{ padding: "28px 32px" }}>
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.8px", color: DARK, marginBottom: 2 }}>
           Create New Job

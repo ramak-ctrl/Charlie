@@ -28,10 +28,10 @@ export default async function JobsPage() {
   const allJobs: Job[] = (jobs as Job[]) ?? [];
 
   return (
-    <div style={{ padding: "28px 32px" }}>
+    <div className="rpad-x" style={{ padding: "28px 32px" }}>
 
       {/* ── Page header ── */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+      <div className="rstack" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
             <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.8px", color: DARK, lineHeight: 1 }}>

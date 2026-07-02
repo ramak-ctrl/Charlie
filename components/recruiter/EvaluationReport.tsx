@@ -189,7 +189,7 @@ export default function EvaluationReport({ interviewId, onClose }: Props) {
             <Divider />
 
             {/* ── Strengths & Concerns ── */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <div className="rgrid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               <div style={{ background: "rgba(5,150,105,0.05)", border: "1px solid rgba(5,150,105,0.15)", borderRadius: 12, padding: "14px 16px" }}>
                 <h3 style={{ fontWeight: 700, color: "#059669", fontSize: 13, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
                   <CheckCircle2 style={{ width: 15, height: 15 }} /> Strengths

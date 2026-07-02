@@ -18,7 +18,7 @@ export default async function SettingsPage() {
   const settingsStatus = isAdmin ? await getSettingsStatus() : [];
 
   return (
-    <div style={{ padding: "28px 32px", maxWidth: 860 }}>
+    <div className="rpad-x" style={{ padding: "28px 32px", maxWidth: 860 }}>
       <div style={{ marginBottom: 28 }}>
         <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.8px", color: DARK, marginBottom: 2 }}>Settings</h1>
         <p style={{ fontSize: 13, color: MUTED }}>Manage your account and preferences.</p>

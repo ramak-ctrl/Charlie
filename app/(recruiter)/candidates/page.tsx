@@ -96,8 +96,8 @@ export default async function CandidatesPage() {
   const openJobs = (jobsData as { id: string; title: string }[]) ?? [];
 
   return (
-    <div style={{ padding: "28px 32px" }}>
-      <div style={{ marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+    <div className="rpad-x" style={{ padding: "28px 32px" }}>
+      <div className="rstack" style={{ marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
             <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.8px", color: DARK, lineHeight: 1 }}>

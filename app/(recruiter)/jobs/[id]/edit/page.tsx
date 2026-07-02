@@ -19,7 +19,7 @@ export default async function EditJobPage({ params }: { params: Promise<{ id: st
   if (!job) notFound();
 
   return (
-    <div style={{ padding: "28px 32px" }}>
+    <div className="rpad-x" style={{ padding: "28px 32px" }}>
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.8px", color: DARK, marginBottom: 2 }}>
           Edit Job

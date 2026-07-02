@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Menu } from "lucide-react";
 
 const C = {
   bg:     "#FFFFFF",
@@ -28,13 +28,13 @@ function resolveCrumbs(pathname: string): string[] {
   }, []);
 }
 
-export default function TopBar({ userEmail }: { userEmail: string }) {
+export default function TopBar({ userEmail, onMenu }: { userEmail: string; onMenu?: () => void }) {
   const pathname = usePathname();
   const crumbs   = resolveCrumbs(pathname);
   const initial  = getInitial(userEmail);
 
   return (
-    <header style={{
+    <header className="topbar-pad" style={{
       display: "flex", alignItems: "center", justifyContent: "space-between",
       padding: "0 28px", height: 52,
       background: C.bg,
@@ -42,8 +42,21 @@ export default function TopBar({ userEmail }: { userEmail: string }) {
       flexShrink: 0, position: "sticky", top: 0, zIndex: 40,
     }}>
 
-      {/* Breadcrumb */}
+      {/* Breadcrumb (with mobile hamburger) */}
       <nav aria-label="Breadcrumb" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+        <button
+          type="button"
+          onClick={onMenu}
+          aria-label="Open menu"
+          className="inline-flex md:hidden items-center justify-center"
+          style={{
+            width: 34, height: 34, marginRight: 6, marginLeft: -6,
+            borderRadius: 9, border: "none", background: "transparent",
+            color: C.dark, cursor: "pointer", flexShrink: 0,
+          }}
+        >
+          <Menu style={{ width: 20, height: 20 }} />
+        </button>
         <span style={{ fontSize: 13, color: C.muted, fontWeight: 500 }}>Charlie</span>
         {crumbs.map((c, i) => {
           const isLast = i === crumbs.length - 1;

@@ -323,7 +323,7 @@ export default function JobForm({ job, userFullName = "" }: Props) {
         </div>
 
         {/* Row: LOCATION | ACCOUNT MANAGER */}
-        <div style={grid2}>
+        <div className="rgrid-2" style={grid2}>
           <div>
             <Label text="JOB LOCATION" />
             <input

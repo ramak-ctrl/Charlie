@@ -185,3 +185,29 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+/* ── Admin responsive helpers ──────────────────────────────────────────────
+   The recruiter dashboard is built with inline-style grids (fixed
+   grid-template-columns), which can't hold media queries. These classes are
+   added to those containers and override the inline grid at small widths.
+   !important is required to beat the inline style. */
+@media (max-width: 1024px) {
+  .rgrid-4 { grid-template-columns: repeat(2, 1fr) !important; }
+}
+@media (max-width: 768px) {
+  .rgrid-4,
+  .rgrid-3,
+  .rgrid-2,
+  .rgrid-main { grid-template-columns: 1fr !important; }
+
+  /* Reduce oversized horizontal page padding on phones */
+  .rpad-x { padding-left: 16px !important; padding-right: 16px !important; }
+  .topbar-pad { padding-left: 14px !important; padding-right: 14px !important; }
+
+  /* Stack a row that was flex/justify-between (e.g. page headers) */
+  .rstack {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 14px !important;
+  }
+}

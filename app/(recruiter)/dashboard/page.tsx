@@ -32,10 +32,10 @@ export default async function DashboardPage() {
   const activeJobs      = allJobs.filter(j => j.status === "active").length;
 
   return (
-    <div style={{ padding: "28px 32px", background: C.bg, minHeight: "100%" }}>
+    <div className="rpad-x" style={{ padding: "28px 32px", background: C.bg, minHeight: "100%" }}>
 
       {/* ── Header ── */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 32 }}>
+      <div className="rstack" style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 32 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.8px", color: C.dark, marginBottom: 4, lineHeight: 1.1 }}>
             Good to see you 👋
@@ -55,7 +55,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* ── Stat cards ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 24 }}>
+      <div className="rgrid-4" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 24 }}>
         <StatCard label="Total Jobs"           value={allJobs.length} icon={Briefcase}    accent="#3D6B54" />
         <StatCard label="Active Jobs"          value={activeJobs}      icon={TrendingUp}   accent="#10B981" />
         <StatCard label="Total Candidates"     value={totalCandidates} icon={Users}        accent="#0EA5A4" />
@@ -63,7 +63,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* ── Quick actions ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 24 }}>
+      <div className="rgrid-3" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 24 }}>
         {[
           { icon: Briefcase, label: "Post a new job",   sub: "Create role, add criteria & questions",  href: "/jobs/new",           dark: false },
           { icon: Users,     label: "View candidates",  sub: "See all screened candidates",             href: "/candidates",          dark: false },
@@ -91,7 +91,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* ── Main 2-col layout ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 16 }}>
+      <div className="rgrid-main" style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 16 }}>
 
         {/* Jobs table */}
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 12px rgba(28,56,41,0.05)" }}>

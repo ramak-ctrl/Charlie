@@ -14,7 +14,15 @@ const navItems = [
 
 const LIME = "#B8E04A";
 
-export default function Sidebar({ userEmail }: { userEmail: string }) {
+export default function Sidebar({
+  userEmail,
+  mobileOpen = false,
+  onClose = () => {},
+}: {
+  userEmail: string;
+  mobileOpen?: boolean;
+  onClose?: () => void;
+}) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -26,7 +34,21 @@ export default function Sidebar({ userEmail }: { userEmail: string }) {
   }
 
   return (
-    <aside className="w-60 sidebar-bg flex flex-col h-full shrink-0" style={{ borderRight: "1px solid rgba(255,255,255,0.06)" }}>
+    <>
+      {/* Mobile backdrop — tap to dismiss */}
+      {mobileOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/50 z-40"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+      <aside
+        className={`fixed md:static inset-y-0 left-0 z-50 w-60 sidebar-bg flex flex-col h-full shrink-0 transform transition-transform duration-200 md:translate-x-0 ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+        style={{ borderRight: "1px solid rgba(255,255,255,0.06)" }}
+      >
 
       {/* Logo */}
       <div style={{ padding: "22px 20px 20px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
@@ -42,6 +64,7 @@ export default function Sidebar({ userEmail }: { userEmail: string }) {
             <Link
               key={item.href}
               href={item.href}
+              onClick={onClose}
               aria-current={active ? "page" : undefined}
               style={active ? {
                 display: "flex", alignItems: "center", gap: 12,
@@ -89,6 +112,7 @@ export default function Sidebar({ userEmail }: { userEmail: string }) {
           Sign out
         </button>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }
