@@ -48,21 +48,28 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: "Interview not found" }, { status: 404 });
   }
 
-  // Mark completed and store the transcript.
+  // A call that produced no real conversation (candidate dropped, broken mic, only
+  // the greeting) should NOT be recorded as a genuine "completed" interview — that
+  // makes an abandoned attempt indistinguishable from a finished one in the
+  // dashboard. Mark it "no_show" and leave the candidate at "started" instead.
+  const hasRealConversation = transcript.length > 2;
+
   await supabase
     .from("interviews")
     .update({
-      status: "completed",
+      status: hasRealConversation ? "completed" : "no_show",
       transcript,
       completed_at: new Date().toISOString(),
     })
     .eq("id", interview.id);
 
-  await supabase.from("candidates").update({ status: "completed" }).eq("id", interview.candidate_id);
+  if (hasRealConversation) {
+    await supabase.from("candidates").update({ status: "completed" }).eq("id", interview.candidate_id);
+  }
 
   // Run analysis once there's enough conversation, and only if not already done.
   let analysis: Record<string, unknown> = { analyzed: false, reason: "transcript too short" };
-  if (transcript.length > 2) {
+  if (hasRealConversation) {
     const { data: existing } = await supabase
       .from("evaluations")
       .select("id")

@@ -31,27 +31,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: "Link expired" }, { status: 410 });
   }
 
-  // If token already used and interview completed, block
-  if (tokenData.used_at) {
-    const { data: existingInterview } = await supabase
-      .from("interviews")
-      .select("id, status, retell_call_id")
-      .eq("token_id", tokenData.id)
-      .single();
-
-    if (existingInterview?.status === "completed") {
-      return NextResponse.json({ error: "Interview already completed" }, { status: 409 });
-    }
-
-    // In-progress interview from a broken previous attempt — delete it so we can restart
-    if (existingInterview) {
-      await supabase.from("interviews").delete().eq("id", existingInterview.id);
-    }
-
-    // Clear used_at so the token can be used again
-    await supabase.from("interview_tokens").update({ used_at: null }).eq("id", tokenData.id);
-  }
-
   const candidate = tokenData.candidates as { id: string; name: string; email: string };
   const job = tokenData.jobs as {
     id: string; title: string; company_intro: string | null;
@@ -67,22 +46,46 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   // ── Pipecat / Groq voice agent (the Tom bot) ────────────────────────────────
   if (provider === "pipecat") {
-    const { data: interview, error: interviewError } = await supabase
+    // Idempotent start guard: a double-click, React StrictMode double-mount, or a
+    // quick refresh can fire two create-call requests for the same token. Reuse a
+    // recent in-progress interview instead of spawning a duplicate bot session;
+    // block a completed one; recycle a stale/broken attempt.
+    const { data: priorRows } = await supabase
       .from("interviews")
-      .insert({
-        token_id: tokenData.id,
-        candidate_id: candidate.id,
-        job_id: job.id,
-        status: "in_progress",
-        consent_given: true,
-        started_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
+      .select("id, status, started_at")
+      .eq("token_id", tokenData.id)
+      .order("started_at", { ascending: false })
+      .limit(1);
+    const prior = priorRows?.[0] as { id: string; status: string; started_at: string } | undefined;
 
-    if (interviewError || !interview) {
-      console.error("Interview insert failed:", interviewError);
-      return NextResponse.json({ error: "Failed to create interview record" }, { status: 500 });
+    if (prior?.status === "completed") {
+      return NextResponse.json({ error: "Interview already completed" }, { status: 409 });
+    }
+
+    let interviewId: string;
+    const priorAgeMs = prior ? Date.now() - new Date(prior.started_at).getTime() : Infinity;
+    if (prior && prior.status === "in_progress" && priorAgeMs < 60_000) {
+      interviewId = prior.id; // concurrent/rapid restart — reuse, don't duplicate
+    } else {
+      if (prior) await supabase.from("interviews").delete().eq("id", prior.id); // stale/broken — recycle
+      const { data: created, error: interviewError } = await supabase
+        .from("interviews")
+        .insert({
+          token_id: tokenData.id,
+          candidate_id: candidate.id,
+          job_id: job.id,
+          status: "in_progress",
+          consent_given: true,
+          started_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (interviewError || !created) {
+        console.error("Interview insert failed:", interviewError);
+        return NextResponse.json({ error: "Failed to create interview record" }, { status: 500 });
+      }
+      interviewId = created.id;
     }
 
     await supabase.from("interview_tokens").update({ used_at: new Date().toISOString() }).eq("id", tokenData.id);
@@ -116,19 +119,19 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     return NextResponse.json({
       provider: "pipecat",
-      interview_id: interview.id,
+      interview_id: interviewId,
       bot_url: botUrl,
       config: {
-        interview_id: interview.id,
+        interview_id: interviewId,
         candidate_name: candidate.name,
         system_prompt: systemPrompt,
-        transcript_webhook_url: `${appUrl}/api/interviews/transcript/${interview.id}`,
-        webhook_secret: await getSetting("BOT_WEBHOOK_SECRET"),
-        // Let the admin-configured Groq key drive the bot (bot.py prefers config key).
-        groq_api_key: await getSetting("GROQ_API_KEY"),
-        // TTS provider + Deepgram key (bot prefers Deepgram when a key is present).
+        transcript_webhook_url: `${appUrl}/api/interviews/transcript/${interviewId}`,
+        // Non-secret runtime hints only. Secrets (Groq/Deepgram API keys and the
+        // webhook secret) are deliberately NOT sent here — this config is relayed
+        // through the candidate's browser to the bot, so anything included is
+        // readable in DevTools. The bot resolves all secrets from its OWN env
+        // (GROQ_API_KEY, DEEPGRAM_API_KEY, BOT_WEBHOOK_SECRET).
         tts_provider: await getSetting("TTS_PROVIDER"),
-        deepgram_api_key: await getSetting("DEEPGRAM_API_KEY"),
         // Interviewer model (blank = bot default, llama-3.3-70b-versatile).
         llm_model: await getSetting("GROQ_LLM_MODEL"),
       },
@@ -136,6 +139,23 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   // ── Retell (default / fallback) ─────────────────────────────────────────────
+  // If the token was already used, block a completed interview and recycle a
+  // broken in-progress attempt so the candidate can restart.
+  if (tokenData.used_at) {
+    const { data: existingInterview } = await supabase
+      .from("interviews")
+      .select("id, status")
+      .eq("token_id", tokenData.id)
+      .single();
+    if (existingInterview?.status === "completed") {
+      return NextResponse.json({ error: "Interview already completed" }, { status: 409 });
+    }
+    if (existingInterview) {
+      await supabase.from("interviews").delete().eq("id", existingInterview.id);
+    }
+    await supabase.from("interview_tokens").update({ used_at: null }).eq("id", tokenData.id);
+  }
+
   // Create Retell web call via direct REST (bypasses SDK version issues)
   const retellRes = await fetch("https://api.retellai.com/v2/create-web-call", {
     method: "POST",

@@ -225,15 +225,41 @@ export async function analyzeInterview(
   const anthropicKey = await getSetting("ANTHROPIC_API_KEY");
   const groqKey = await getSetting("GROQ_API_KEY");
   const geminiKey = await getSetting("GEMINI_API_KEY");
-  const provider = (await getSetting("ANALYSIS_PROVIDER")) || (
-    geminiKey ? "gemini" :
-    anthropicKey ? "anthropic" :
-    groqKey ? "groq" :
-    "ollama"
-  );
+  const forced = await getSetting("ANALYSIS_PROVIDER");
 
-  if (provider === "gemini") return analyzeWithGemini(params, geminiKey);
-  if (provider === "groq") return analyzeWithGroq(params, groqKey);
-  if (provider === "ollama") return analyzeWithOllama(params);
-  return analyzeWithClaude(params, anthropicKey);
+  // Build an ordered chain of providers to attempt. If ANALYSIS_PROVIDER is set we
+  // try it first, then fall through to any other configured provider — so a
+  // transient failure (e.g. a free-tier 429 from Gemini) doesn't leave the
+  // candidate with no report. This is what the Settings help text promises
+  // ("auto: Gemini → Anthropic → Groq"), which the previous single-pick did not do.
+  type Attempt = { name: string; run: () => Promise<Awaited<ReturnType<typeof analyzeWithGemini>>> };
+  const available: Attempt[] = [];
+  const add = (name: string) => {
+    if (available.some((a) => a.name === name)) return;
+    if (name === "gemini" && geminiKey) available.push({ name, run: () => analyzeWithGemini(params, geminiKey) });
+    else if (name === "anthropic" && anthropicKey) available.push({ name, run: () => analyzeWithClaude(params, anthropicKey) });
+    else if (name === "groq" && groqKey) available.push({ name, run: () => analyzeWithGroq(params, groqKey) });
+    else if (name === "ollama") available.push({ name, run: () => analyzeWithOllama(params) });
+  };
+
+  if (forced) add(forced);
+  // Default preference order for the fallback chain.
+  add("gemini");
+  add("anthropic");
+  add("groq");
+  // Ollama only as a last resort when nothing else is configured (local dev).
+  if (!available.length) add("ollama");
+
+  let lastErr: unknown;
+  for (const attempt of available) {
+    try {
+      return await attempt.run();
+    } catch (err) {
+      lastErr = err;
+      console.error(`[analysis] provider "${attempt.name}" failed, trying next:`, err);
+    }
+  }
+  throw new Error(
+    `All analysis providers failed. Last error: ${lastErr instanceof Error ? lastErr.message : String(lastErr)}`
+  );
 }

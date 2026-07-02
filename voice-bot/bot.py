@@ -296,7 +296,9 @@ async def run_bot(webrtc_connection: SmallWebRTCConnection, interview_config: di
     # Host-app integration (e.g. Charlie): if a system_prompt is supplied, use it verbatim;
     # if a transcript_webhook_url is supplied, deliver the transcript there instead of Tom's API.
     transcript_webhook_url = interview_config.get("transcript_webhook_url")
-    webhook_secret = interview_config.get("webhook_secret", "")
+    # Secret is resolved from the bot's OWN env, not the call config — the config is
+    # relayed through the candidate's browser, so a secret sent there would be public.
+    webhook_secret = interview_config.get("webhook_secret") or os.getenv("BOT_WEBHOOK_SECRET", "")
     system_prompt = interview_config.get("system_prompt") or build_system_prompt(
         role_title, company_name, evaluation_focus, tone, jd_context
     )
@@ -374,6 +376,37 @@ async def run_bot(webrtc_connection: SmallWebRTCConnection, interview_config: di
                     await worker.queue_frames([EndFrame()])
                     return
 
+    async def monitor_inactivity():
+        """End the interview if the candidate never speaks / goes silent.
+
+        Without this, a candidate with a broken mic (or who simply walks away)
+        leaves the bot session pinned open forever — it only ends on a CLOSING:
+        turn (which never comes) or a WebRTC disconnect (tab close). We watch the
+        message count: every candidate/bot turn appends to context.messages, so a
+        stalled conversation shows up as the count not changing.
+        """
+        nonlocal transcript_saved
+        NO_ACTIVITY_LIMIT = 75  # seconds with no new turn → give up
+        idle = 0
+        last_count = len(context.messages)
+        while True:
+            await asyncio.sleep(1)
+            if transcript_saved:
+                return
+            count = len(context.messages)
+            if count != last_count:
+                last_count = count
+                idle = 0
+                continue
+            idle += 1
+            if idle >= NO_ACTIVITY_LIMIT:
+                logger.info(f"No activity for {NO_ACTIVITY_LIMIT}s — ending interview {interview_id}")
+                if not transcript_saved:
+                    transcript_saved = True
+                    await deliver_transcript()
+                await worker.queue_frames([EndFrame()])
+                return
+
     @worker.rtvi.event_handler("on_client_ready")
     async def on_client_ready(rtvi):
         logger.info(f"Client ready — interview_id={interview_id}")
@@ -391,6 +424,7 @@ async def run_bot(webrtc_connection: SmallWebRTCConnection, interview_config: di
         context.add_message({"role": "assistant", "content": greeting})
         await worker.queue_frames([TTSSpeakFrame(greeting)])
         asyncio.create_task(monitor_closing())
+        asyncio.create_task(monitor_inactivity())
 
     @transport.event_handler("on_client_disconnected")
     async def on_client_disconnected(transport, client):
