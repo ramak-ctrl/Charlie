@@ -114,7 +114,7 @@ function Hero() {
               fontSize: 10, fontWeight: 800, letterSpacing: "0.08em",
               textTransform: "uppercase", borderRadius: 100, padding: "3px 10px",
             }}>New</span>
-            <span style={{ fontSize: 13, color: C.mid, fontWeight: 500 }}>Role-fit criteria · AI candidate ranking</span>
+            <span style={{ fontSize: 13, color: C.mid, fontWeight: 500 }}>Role fit criteria · smarter candidate ranking</span>
           </div>
         </div>
 
@@ -125,9 +125,9 @@ function Hero() {
           lineHeight: 1.0, textAlign: "center",
           color: C.dark, marginBottom: 24,
         }}>
-          First-round interviews,<br />
+          First round interviews,<br />
           <span style={{ position: "relative", display: "inline-block" }}>
-            fully automated.
+            handled for you.
             <svg viewBox="0 0 520 20" style={{ position: "absolute", bottom: -4, left: 0, width: "100%", overflow: "visible", pointerEvents: "none" }} preserveAspectRatio="none">
               <path d="M5 14 Q85 5 175 12 Q285 19 390 11 Q450 7 515 14" stroke={C.lime} strokeWidth="5" fill="none" strokeLinecap="round"/>
             </svg>
@@ -138,7 +138,7 @@ function Hero() {
           fontSize: 17, color: C.mid, lineHeight: 1.85,
           textAlign: "center", maxWidth: 520, margin: "0 auto 40px",
         }}>
-          Charlie conducts structured voice interviews, scores candidates across 5 dimensions, checks role-fit criteria, and ranks your entire applicant pool — no human needed.
+          Charlie talks to every candidate, scores how they did across five areas, checks them against what the role really needs, and hands you a ranked list. You never have to sit through another first screening call.
         </p>
 
         {/* CTAs */}
@@ -174,10 +174,10 @@ function Hero() {
           overflow: "hidden",
         }}>
           {[
-            { n: "24/7",  l: "Always available",   sub: "No time zone issues"     },
-            { n: "< 60s", l: "Report after call",  sub: "Avg. analysis time"      },
-            { n: "5",     l: "Scoring dimensions", sub: "Communication + 4 more"  },
-            { n: "3–5",   l: "Role-fit criteria",  sub: "Checkable & verifiable"  },
+            { n: "24/7",  l: "Always available",   sub: "Works in every time zone" },
+            { n: "< 60s", l: "Report after call",  sub: "Average analysis time"    },
+            { n: "5",     l: "Scoring areas",      sub: "Communication and 4 more" },
+            { n: "3+",    l: "Role fit criteria",  sub: "Checked and verified"     },
           ].map((s, i) => (
             <div key={i} style={{
               padding: "28px 24px",
@@ -204,11 +204,11 @@ function ProductPreview() {
           <div>
             <span style={{ display: "inline-block", background: `${C.lime}22`, border: `1px solid ${C.lime}44`, color: C.lime, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", borderRadius: 100, padding: "3px 14px", marginBottom: 14 }}>The output</span>
             <h2 style={{ fontSize: "clamp(24px, 3.5vw, 38px)", fontWeight: 800, letterSpacing: "-1.5px", color: "#fff", lineHeight: 1.1 }}>
-              Every interview becomes<br />structured data
+              Every interview turns into<br />a report you can act on
             </h2>
           </div>
           <p style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: 1.8, maxWidth: 300 }}>
-            Transcribed, scored, and ranked automatically. You open the report — everything is already done.
+            Transcribed, scored, and ranked automatically. By the time you open the report, the work is already done.
           </p>
         </div>
 
@@ -296,9 +296,9 @@ function ProductPreview() {
 /* ── how it works ─────────────────────────────────────────── */
 function HowItWorks() {
   const steps = [
-    { n: "01", title: "Create a job",     desc: "Define the role, add 3–5 role-fit criteria (e.g. \"has carried a quota\"), key skills, and the questions Charlie will ask each candidate.", icon: "📋" },
-    { n: "02", title: "Invite candidates", desc: "Add candidates and share their unique interview link. They complete the voice interview at their own pace — any device, any time.",              icon: "🔗" },
-    { n: "03", title: "Get your shortlist", desc: "Receive scored reports with full transcripts, per-criterion verdicts, and a ranked shortlist of all candidates — in under 60 seconds.",    icon: "🏆" },
+    { n: "01", title: "Create a job",     desc: "Set up the role, add a few role fit criteria (like \"has carried a quota\"), list the key skills, and write the questions you want Charlie to ask.", icon: "📋" },
+    { n: "02", title: "Invite candidates", desc: "Add your candidates and send each one a private link. They take the interview whenever it suits them, on any device.",                            icon: "🔗" },
+    { n: "03", title: "Get your shortlist", desc: "Get scored reports with full transcripts, a verdict on every criterion, and a ranked shortlist of everyone. Usually in under a minute.",           icon: "🏆" },
   ];
   return (
     <section id="how-it-works" style={{ background: C.bgAlt, padding: "80px 40px" }}>
@@ -336,7 +336,7 @@ function Features() {
             <span style={{ display: "inline-block", background: `${C.lime}35`, border: `1px solid ${C.lime}70`, color: C.dark, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", borderRadius: 100, padding: "3px 14px", marginBottom: 14 }}>Features</span>
             <h2 style={{ fontSize: "clamp(26px, 4vw, 40px)", fontWeight: 800, letterSpacing: "-1.5px", color: C.dark, lineHeight: 1.1 }}>Everything in one place</h2>
           </div>
-          <p style={{ fontSize: 14, color: C.muted, lineHeight: 1.8, maxWidth: 360 }}>From invite to shortlist — Charlie handles the entire first-round screening without any human involvement.</p>
+          <p style={{ fontSize: 14, color: C.muted, lineHeight: 1.8, maxWidth: 360 }}>From the first invite to your final shortlist, Charlie runs the whole first round of screening for you.</p>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
@@ -346,7 +346,7 @@ function Features() {
               <div style={{ fontSize: 32, marginBottom: 20 }}>🎙️</div>
               <h3 style={{ fontSize: 20, fontWeight: 800, color: "#fff", marginBottom: 12, letterSpacing: "-0.5px" }}>AI Voice Interviews</h3>
               <p style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", lineHeight: 1.85, maxWidth: 320 }}>
-                Charlie conducts the interview — natural, conversational, and perfectly consistent. Every candidate gets the same structure. No more "I was too tired to listen properly."
+                Charlie runs the interview itself, and it feels natural and conversational. Every candidate gets the same fair conversation, even when you have a hundred of them to get through.
               </p>
             </div>
             <div style={{ marginTop: 32, display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -357,10 +357,10 @@ function Features() {
           </div>
 
           {[
-            { icon: "✓",  title: "Role Fit Criteria",   desc: "Define 3–5 checkable facts. Charlie verifies each against what the candidate actually said — no guesswork.", color: "#60A5FA" },
-            { icon: "#",  title: "Candidate Ranking",   desc: "Automatic 1st/2nd/3rd ranking when multiple candidates complete the same role. Defensible and deterministic.", color: "#A78BFA" },
-            { icon: "📊", title: "5-Axis Scoring",      desc: "Communication, composure, professionalism, seriousness, and reliability — scored with evidence.", color: "#34D399" },
-            { icon: "⚡", title: "Screen at Scale",     desc: "Run 10 or 200 interviews simultaneously. Charlie never gets tired, biased, or inconsistent.", color: "#FBBF24" },
+            { icon: "✓",  title: "Role Fit Criteria",   desc: "List the facts that matter for the role. Charlie checks each one against what the candidate actually said, so there is no guessing.", color: "#60A5FA" },
+            { icon: "#",  title: "Candidate Ranking",   desc: "When several people apply for the same role, Charlie ranks them for you, in an order that stays consistent and is easy to explain.", color: "#A78BFA" },
+            { icon: "📊", title: "Scored on five things", desc: "Communication, composure, professionalism, seriousness, and reliability, each backed by real quotes from the interview.", color: "#34D399" },
+            { icon: "⚡", title: "Screen at Scale",     desc: "Run ten interviews or two hundred at once. Charlie never gets tired, never plays favourites, and never has an off day.", color: "#FBBF24" },
           ].map((f, i) => (
             <div key={i} data-reveal data-delay={String((i + 1) * 100)} className="bento-card" style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 18, padding: "26px 28px", boxShadow: "0 2px 12px rgba(28,56,41,0.05)" }}>
               <div style={{ width: 38, height: 38, borderRadius: 10, marginBottom: 14, background: `${f.color}15`, border: `1px solid ${f.color}25`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: f.color }}>{f.icon}</div>
@@ -375,8 +375,8 @@ function Features() {
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <span style={{ fontSize: 24 }}>🔒</span>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: C.dark }}>Private & Secure by design</div>
-              <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>All candidate data lives in your own Supabase instance. Row-level security enforced. Nothing shared externally.</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: C.dark }}>Private and secure by design</div>
+              <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>Your candidate data stays in your own Supabase database, protected by row level security. Nothing ever leaves for anywhere else.</div>
             </div>
           </div>
           <Link href="/auth/login" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700, color: C.dark, background: C.lime, borderRadius: 100, padding: "9px 22px", textDecoration: "none" }}>
@@ -391,8 +391,8 @@ function Features() {
 /* ── testimonials ─────────────────────────────────────────── */
 function Testimonials() {
   const quotes = [
-    { text: "What stood out the most was the conversational and human-like interaction. Rather than feeling automated, Charlie conducted meaningful screening conversations that helped efficiently gather relevant candidate insights.", author: "Mechispike", role: "Recruiting Team" },
-    { text: "One challenge we consistently faced during onboarding and volunteer screening was finding a process that felt structured without losing the human aspect of conversation — and Charlie fixes it.", author: "Dhara", role: "Operations Lead" },
+    { text: "What stood out the most was how conversational and human it felt. Rather than feeling automated, Charlie held meaningful screening conversations that helped us gather the candidate insights we needed.", author: "Mechispike", role: "Recruiting Team" },
+    { text: "One challenge we kept running into during onboarding and volunteer screening was finding a process that felt structured without losing the human side of a real conversation. Charlie fixes exactly that.", author: "Dhara", role: "Operations Lead" },
   ];
   return (
     <section style={{ background: C.bgAlt, padding: "80px 40px" }}>
@@ -428,7 +428,7 @@ function Pricing() {
     {
       name: "Pilot", price: "₹16,000", mins: "1,200 min", interviews: "~100 interviews",
       desc: "For teams just getting started with AI screening.",
-      features: ["Voice AI interviews", "5-axis scoring reports", "Role-fit criteria (3–5 per job)", "Candidate ranking", "Full transcripts", "Email support"],
+      features: ["Voice AI interviews", "Scoring reports across five areas", "Role fit criteria for every job", "Candidate ranking", "Full transcripts", "Email support"],
       highlight: false,
     },
     {
@@ -439,8 +439,8 @@ function Pricing() {
     },
     {
       name: "Scale", price: "₹60,000", mins: "4,000 min", interviews: "~333 interviews",
-      desc: "For high-volume teams that need maximum throughput.",
-      features: ["Everything in Growth", "Dedicated account manager", "Custom integrations", "Advanced analytics", "SLA guarantee", "White-glove setup"],
+      desc: "For high volume teams that need to move fast.",
+      features: ["Everything in Growth", "Dedicated account manager", "Custom integrations", "Advanced analytics", "SLA guarantee", "Personal setup help"],
       highlight: false,
     },
   ];
