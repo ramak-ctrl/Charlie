@@ -1,5 +1,7 @@
 import asyncio
 import os
+import time
+from collections import deque
 from contextlib import asynccontextmanager
 
 import httpx
@@ -51,6 +53,15 @@ TURN_USERNAME = os.getenv("TURN_USERNAME", "")
 TURN_CREDENTIAL = os.getenv("TURN_CREDENTIAL", "")
 
 CLOSING_PREFIX = "CLOSING:"
+
+# In-memory diagnostics ring buffer (last ~60 events), exposed at /health/last.
+# Lets us see the server-side sequence of a call without Render log access.
+_events: deque = deque(maxlen=60)
+
+
+def rec(msg: str) -> None:
+    _events.append(f"{time.strftime('%H:%M:%S')} {msg}")
+    logger.info(f"[diag] {msg}")
 
 # ── ICE servers ───────────────────────────────────────────────────────────────
 
@@ -225,6 +236,8 @@ def build_tts(interview_config: dict, groq_key: str):
     if not provider:
         provider = "deepgram" if deepgram_key else "groq"
 
+    rec(f"build_tts -> provider={provider} deepgram_key_present={bool(deepgram_key)}")
+
     if provider == "deepgram":
         if deepgram_key:
             voice = os.getenv("DEEPGRAM_VOICE", "aura-2-helena-en")
@@ -285,7 +298,20 @@ async def save_transcript(interview_id: str, transcript: str):
 # ── Bot pipeline ──────────────────────────────────────────────────────────────
 
 async def run_bot(webrtc_connection: SmallWebRTCConnection, interview_config: dict):
+    # Thin wrapper so that ANY error in the pipeline (service init, TTS, etc.) is
+    # captured — this runs as a FastAPI background task, where exceptions would
+    # otherwise vanish silently and look like "no voice".
+    try:
+        await _run_bot_impl(webrtc_connection, interview_config)
+    except Exception as e:
+        import traceback
+        rec(f"run_bot ERROR: {type(e).__name__}: {str(e)[:200]}")
+        logger.error(f"run_bot failed:\n{traceback.format_exc()}")
+
+
+async def _run_bot_impl(webrtc_connection: SmallWebRTCConnection, interview_config: dict):
     interview_id = interview_config.get("interview_id")
+    rec(f"run_bot enter id={interview_id}")
     candidate_name = interview_config.get("candidate_name", "")
     role_title = interview_config.get("role_title", "the role")
     company_name = interview_config.get("company_name", "the company")
@@ -423,6 +449,7 @@ async def run_bot(webrtc_connection: SmallWebRTCConnection, interview_config: di
         )
         context.add_message({"role": "assistant", "content": greeting})
         await worker.queue_frames([TTSSpeakFrame(greeting)])
+        rec("on_client_ready: greeting queued (TTSSpeakFrame)")
         asyncio.create_task(monitor_closing())
         asyncio.create_task(monitor_inactivity())
 
@@ -435,9 +462,11 @@ async def run_bot(webrtc_connection: SmallWebRTCConnection, interview_config: di
             await deliver_transcript()
         await worker.cancel()
 
+    rec("pipeline starting (runner.run)")
     runner = WorkerRunner(handle_sigint=False)
     await runner.add_workers(worker)
     await runner.run()
+    rec("pipeline ended")
 
 
 # ── FastAPI app ───────────────────────────────────────────────────────────────
@@ -526,6 +555,14 @@ async def health_tts():
         return {"ok": False, "reason": str(e)[:300]}
 
 
+@app.get("/health/last")
+async def health_last():
+    """The last ~60 server-side diagnostic events. Do a test interview, then read
+    this to see the exact sequence: run_bot enter -> build_tts -> greeting queued
+    -> pipeline. If it stops early or shows an ERROR line, that's the cause."""
+    return {"events": list(_events)}
+
+
 @app.post("/start")
 async def start(request: Request):
     """Pipecat client calls this first — stores session data, returns session ID + TURN ICE servers."""
@@ -536,6 +573,7 @@ async def start(request: Request):
         body = {}
 
     session_id = str(uuid.uuid4())
+    rec(f"/start session={session_id[:8]} cfg_keys={list((body.get('body') or {}).keys())}")
     # requestData.body carries interview_config (set by frontend startBotAndConnect)
     _session_store[session_id] = body.get("body", {})
     logger.debug(f"Session {session_id} created, interview_config={_session_store[session_id]}")
