@@ -476,6 +476,27 @@ async def root():
     return RedirectResponse(url="/client/")
 
 
+@app.get("/health")
+async def health():
+    """Non-secret diagnostics. Confirms the keys the bot needs are actually present
+    in ITS OWN environment (they no longer arrive via the browser config), and which
+    TTS provider it will pick. No secret values are returned — booleans only.
+    If deepgram_key_present is false, that's the 'no voice' cause: the bot falls
+    back to Groq TTS (daily cap) and goes silent. Fix = set DEEPGRAM_API_KEY on
+    the charlie-voice-bot service and redeploy."""
+    deepgram = bool(os.getenv("DEEPGRAM_API_KEY", "").strip())
+    groq = bool(os.getenv("GROQ_API_KEY", "").strip())
+    forced = os.getenv("TTS_PROVIDER", "").strip().lower()
+    tts_default = forced or ("deepgram" if deepgram else "groq")
+    return {
+        "ok": True,
+        "groq_key_present": groq,
+        "deepgram_key_present": deepgram,
+        "tts_default": tts_default,
+        "ice_servers": len(_ice_servers),
+    }
+
+
 @app.post("/start")
 async def start(request: Request):
     """Pipecat client calls this first — stores session data, returns session ID + TURN ICE servers."""
