@@ -135,27 +135,49 @@ async def _fetch_metered_ice() -> list[IceServer]:
 
 
 async def fetch_metered_ice_servers() -> list[IceServer]:
-    """Resolve TURN/ICE servers: static env → Cloudflare → Metered → free fallback."""
-    if TURN_URLS and TURN_USERNAME and TURN_CREDENTIAL:
-        servers = _static_turn_servers()
-        logger.info(f"Using {len(servers)} static TURN/ICE servers from env")
-        return servers
+    """Resolve TURN/ICE servers by COMBINING every configured source.
+
+    Previously this returned only the first provider found (static env), so a
+    single provider outage — e.g. ExpressTURN answering auth but failing to
+    allocate a relay (error 508 'insufficient capacity') — killed all
+    connectivity and left candidates stuck on 'Connecting'. Now we offer STUN +
+    every configured relay, and the browser uses whichever actually works.
+    Cloudflare is listed first because it's the most reliable free relay."""
+    servers: list[IceServer] = [IceServer(urls="stun:stun.l.google.com:19302")]
+
+    def add_relays(new: list[IceServer]):
+        servers.extend(s for s in new if not str(s.urls).startswith("stun:"))
+
+    # Cloudflare TURN (free, reliable) — preferred relay when configured.
     if CLOUDFLARE_TURN_KEY_ID and CLOUDFLARE_TURN_API_TOKEN:
         try:
-            servers = await _fetch_cloudflare_ice()
-            logger.info(f"Fetched {len(servers)} ICE servers from Cloudflare TURN")
-            return servers
+            cf = await _fetch_cloudflare_ice()
+            add_relays(cf)
+            logger.info(f"Added {len(cf)} Cloudflare TURN servers")
         except Exception as e:
             logger.error(f"Cloudflare TURN fetch failed: {e}")
+
+    # Static TURN from env (e.g. ExpressTURN) — kept as a secondary relay.
+    if TURN_URLS and TURN_USERNAME and TURN_CREDENTIAL:
+        add_relays(_static_turn_servers())
+        logger.info("Added static TURN servers from env")
+
+    # Metered (if configured).
     if METERED_API_KEY:
         try:
-            servers = await _fetch_metered_ice()
-            logger.info(f"Fetched {len(servers)} ICE servers from Metered")
-            return servers
+            m = await _fetch_metered_ice()
+            add_relays(m)
+            logger.info(f"Added {len(m)} Metered TURN servers")
         except Exception as e:
             logger.error(f"Metered ICE fetch failed: {e}")
-    logger.warning("No working TURN provider — using free STUN/Open Relay fallback")
-    return _fallback_ice_servers()
+
+    if not any(str(s.urls).startswith(("turn:", "turns:")) for s in servers):
+        logger.warning("No TURN provider configured — using best-effort Open Relay fallback")
+        add_relays(_fallback_ice_servers())
+
+    relay_count = sum(1 for s in servers if str(s.urls).startswith(("turn:", "turns:")))
+    logger.info(f"ICE resolved: {len(servers)} servers, {relay_count} relays")
+    return servers
 
 
 # ── System prompt ─────────────────────────────────────────────────────────────
@@ -561,6 +583,83 @@ async def health_tts():
         }
     except Exception as e:
         return {"ok": False, "reason": str(e)[:300]}
+
+
+def _parse_turn_url(url: str):
+    """turn:host:port?transport=tcp  /  turns:host:port  ->  (host, port, tcp?)."""
+    scheme, rest = url.split(":", 1)
+    is_tcp = "transport=tcp" in rest or scheme == "turns"
+    rest = rest.split("?", 1)[0]
+    parts = rest.split(":")
+    host = parts[0]
+    port = int(parts[1]) if len(parts) > 1 else (5349 if scheme == "turns" else 3478)
+    return host, port, is_tcp
+
+
+def _test_turn_allocate(host: str, port: int, username: str, credential: str, use_tcp: bool) -> dict:
+    """Do a real TURN Allocate and report whether the relay actually works.
+    Success => this relay can carry the call. Non-success is the 'no voice' cause."""
+    import socket, struct, hashlib, hmac, secrets
+    MAGIC = 0x2112A442
+
+    def a(t, v):
+        return struct.pack(">HH", t, len(v)) + v + b"\x00" * ((4 - len(v) % 4) % 4)
+
+    def parse(data):
+        out, i = {}, 20
+        while i + 4 <= len(data):
+            t, l = struct.unpack(">HH", data[i:i + 4]); out[t] = data[i + 4:i + 4 + l]
+            i += 4 + l + ((4 - l % 4) % 4)
+        return out
+
+    try:
+        if use_tcp:
+            s = socket.create_connection((host, port), timeout=8)
+            send = lambda m: (s.sendall(m), s.recv(4096))[1]
+        else:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.settimeout(8); s.connect((host, port))
+            send = lambda m: (s.send(m), s.recv(4096))[1]
+        rt = a(0x0019, struct.pack(">BBBB", 17, 0, 0, 0))
+        r1 = send(struct.pack(">HHI", 0x0003, len(rt), MAGIC) + secrets.token_bytes(12) + rt)
+        c = parse(r1); realm, nonce = c.get(0x0014, b""), c.get(0x0015, b"")
+        if not realm:
+            s.close(); return {"ok": False, "detail": "no auth challenge (server unreachable?)"}
+        tid = secrets.token_bytes(12)
+        body = rt + a(0x0006, username.encode()) + a(0x0014, realm) + a(0x0015, nonce)
+        key = hashlib.md5(f"{username}:{realm.decode()}:{credential}".encode()).digest()
+        pre = struct.pack(">HHI", 0x0003, len(body) + 24, MAGIC) + tid + body
+        mi = hmac.new(key, pre, hashlib.sha1).digest()
+        r2 = send(pre + struct.pack(">HH", 0x0008, 20) + mi)
+        s.close()
+        if struct.unpack(">H", r2[:2])[0] == 0x0103:
+            return {"ok": True, "detail": "allocate success"}
+        err = parse(r2).get(0x0009, b"")
+        code = err[2] * 100 + err[3] if len(err) >= 4 else "?"
+        return {"ok": False, "detail": f"error {code}: {err[4:].decode(errors='replace')}"}
+    except Exception as e:
+        return {"ok": False, "detail": str(e)[:150]}
+
+
+@app.get("/health/turn")
+async def health_turn():
+    """Live-test every TURN relay the bot serves. If none succeed, that IS why
+    calls are stuck on 'Connecting' — the WebRTC media can't be relayed."""
+    results = []
+    for srv in _ice_servers:
+        url = str(srv.urls)
+        if not url.startswith(("turn:", "turns:")):
+            continue
+        host, port, is_tcp = _parse_turn_url(url)
+        res = await asyncio.to_thread(
+            _test_turn_allocate, host, port, srv.username or "", srv.credential or "", is_tcp
+        )
+        results.append({"url": url, **res})
+    any_ok = any(r["ok"] for r in results)
+    return {
+        "ok": any_ok,
+        "summary": "at least one relay works" if any_ok else "NO working relay — this is the no-voice cause",
+        "relays": results,
+    }
 
 
 @app.get("/health/last")
