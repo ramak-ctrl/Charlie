@@ -497,6 +497,35 @@ async def health():
     }
 
 
+@app.get("/health/tts")
+async def health_tts():
+    """Live-validate the bot's Deepgram key by attempting a tiny synthesis.
+    Presence != validity — this actually calls Deepgram. No secrets returned.
+    deepgram_status 200 => key works; 401 => invalid key; 402/429 => out of
+    credit / rate-limited. A non-200 here IS the 'no voice' cause."""
+    key = os.getenv("DEEPGRAM_API_KEY", "").strip()
+    if not key:
+        return {"ok": False, "reason": "DEEPGRAM_API_KEY not set on this service"}
+    voice = os.getenv("DEEPGRAM_VOICE", "aura-2-helena-en")
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"https://api.deepgram.com/v1/speak?model={voice}",
+                headers={"Authorization": f"Token {key}", "Content-Type": "application/json"},
+                json={"text": "Charlie voice check."},
+                timeout=15.0,
+            )
+        ok = resp.status_code // 100 == 2
+        return {
+            "ok": ok,
+            "deepgram_status": resp.status_code,
+            "bytes": len(resp.content) if ok else 0,
+            "detail": None if ok else resp.text[:300],
+        }
+    except Exception as e:
+        return {"ok": False, "reason": str(e)[:300]}
+
+
 @app.post("/start")
 async def start(request: Request):
     """Pipecat client calls this first — stores session data, returns session ID + TURN ICE servers."""
