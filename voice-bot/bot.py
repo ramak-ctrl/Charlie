@@ -51,6 +51,9 @@ CLOUDFLARE_TURN_API_TOKEN = os.getenv("CLOUDFLARE_TURN_API_TOKEN", "")
 TURN_URLS = os.getenv("TURN_URLS", "")
 TURN_USERNAME = os.getenv("TURN_USERNAME", "")
 TURN_CREDENTIAL = os.getenv("TURN_CREDENTIAL", "")
+# Cloudflare TURN via the free Hugging Face route (10 GB/mo, no credit card).
+# Just set HF_TOKEN to a Hugging Face access token.
+HF_TOKEN = os.getenv("HF_TOKEN", "")
 
 CLOSING_PREFIX = "CLOSING:"
 
@@ -114,6 +117,37 @@ async def _fetch_cloudflare_ice() -> list[IceServer]:
     return servers
 
 
+async def _fetch_hf_cloudflare_ice() -> list[IceServer]:
+    """Cloudflare TURN via the free Hugging Face route — 10 GB/mo, NO credit card.
+    GET https://turn.fastrtc.org/credentials with a Hugging Face access token.
+    This rides Cloudflare's reliable relay network without any Cloudflare billing."""
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(
+            "https://turn.fastrtc.org/credentials",
+            headers={"Authorization": f"Bearer {HF_TOKEN}"},
+            params={"ttl": 600},
+            timeout=10.0,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+    ice = data.get("iceServers", data)
+    entries = ice if isinstance(ice, list) else [ice]
+    servers: list[IceServer] = []
+    for e in entries:
+        urls = e.get("urls", [])
+        if isinstance(urls, str):
+            urls = [urls]
+        username, credential = e.get("username"), e.get("credential")
+        for u in urls:
+            if u.startswith("stun:") or not username:
+                servers.append(IceServer(urls=u))
+            else:
+                servers.append(IceServer(urls=u, username=username, credential=credential))
+    if not servers:
+        raise ValueError("HF/Cloudflare returned no ICE servers")
+    return servers
+
+
 async def _fetch_metered_ice() -> list[IceServer]:
     url = f"https://{METERED_APP_DOMAIN}/api/v1/turn/credentials?apiKey={METERED_API_KEY}"
     async with httpx.AsyncClient() as client:
@@ -148,7 +182,16 @@ async def fetch_metered_ice_servers() -> list[IceServer]:
     def add_relays(new: list[IceServer]):
         servers.extend(s for s in new if not str(s.urls).startswith("stun:"))
 
-    # Cloudflare TURN (free, reliable) — preferred relay when configured.
+    # Cloudflare TURN via Hugging Face (free, reliable, no credit card) — preferred.
+    if HF_TOKEN:
+        try:
+            hf = await _fetch_hf_cloudflare_ice()
+            add_relays(hf)
+            logger.info(f"Added {len(hf)} Cloudflare TURN servers (via Hugging Face)")
+        except Exception as e:
+            logger.error(f"HF/Cloudflare TURN fetch failed: {e}")
+
+    # Cloudflare TURN (direct keys — needs a Cloudflare account w/ card).
     if CLOUDFLARE_TURN_KEY_ID and CLOUDFLARE_TURN_API_TOKEN:
         try:
             cf = await _fetch_cloudflare_ice()
