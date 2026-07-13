@@ -453,9 +453,17 @@ async def _run_bot_impl(webrtc_connection: SmallWebRTCConnection, interview_conf
         asyncio.create_task(monitor_closing())
         asyncio.create_task(monitor_inactivity())
 
+    @transport.event_handler("on_client_connected")
+    async def on_client_connected(transport, client):
+        # Fires when the WebRTC peer connection is actually established (ICE done).
+        # If we see this but NOT on_client_ready, it's a protocol/handshake issue.
+        # If we NEVER see this, ICE/TURN failed (the stuck-on-Connecting cause).
+        rec("on_client_connected (WebRTC PC established — ICE ok)")
+
     @transport.event_handler("on_client_disconnected")
     async def on_client_disconnected(transport, client):
         nonlocal transcript_saved
+        rec("on_client_disconnected")
         logger.info(f"Client disconnected — interview_id={interview_id}")
         if not transcript_saved:
             transcript_saved = True
