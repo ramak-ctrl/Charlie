@@ -187,9 +187,11 @@ async def fetch_metered_ice_servers() -> list[IceServer]:
         try:
             hf = await _fetch_hf_cloudflare_ice()
             add_relays(hf)
-            logger.info(f"Added {len(hf)} Cloudflare TURN servers (via Hugging Face)")
+            rec(f"ICE: added {len(hf)} Cloudflare relays via Hugging Face")
         except Exception as e:
-            logger.error(f"HF/Cloudflare TURN fetch failed: {e}")
+            rec(f"ICE: HF/Cloudflare fetch FAILED: {type(e).__name__}: {str(e)[:180]}")
+    else:
+        rec("ICE: HF_TOKEN not set — skipping Hugging Face relay")
 
     # Cloudflare TURN (direct keys — needs a Cloudflare account w/ card).
     if CLOUDFLARE_TURN_KEY_ID and CLOUDFLARE_TURN_API_TOKEN:
@@ -590,12 +592,15 @@ async def health():
     groq = bool(os.getenv("GROQ_API_KEY", "").strip())
     forced = os.getenv("TTS_PROVIDER", "").strip().lower()
     tts_default = forced or ("deepgram" if deepgram else "groq")
+    relays = [str(s.urls) for s in _ice_servers if str(s.urls).startswith(("turn:", "turns:"))]
     return {
         "ok": True,
         "groq_key_present": groq,
         "deepgram_key_present": deepgram,
+        "hf_token_present": bool(os.getenv("HF_TOKEN", "").strip()),
         "tts_default": tts_default,
         "ice_servers": len(_ice_servers),
+        "relays": relays,
     }
 
 
